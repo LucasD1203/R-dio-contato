@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Log de Captações VHF/UHF</title>
+<link rel="icon" type="image/png" href="radio-icon.png">
+<link rel="apple-touch-icon" href="radio-icon.png">
+<meta name="theme-color" content="#0f172a">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
@@ -11,6 +14,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:var(--fs);line-height:var(--lh);letter-spacing:var(--ls)}
 header{background:var(--header);color:var(--headerText);padding:14px;text-align:center;font-size:1.3em;font-weight:bold;border-bottom:2px solid var(--accent)}
+header img{height:1.4em;vertical-align:middle;margin-right:8px}
 nav{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;padding:8px;background:var(--card);border-bottom:1px solid var(--border)}
 nav button.on{background:var(--accent);color:var(--btnText)}
 main{max-width:var(--maxw);margin:auto;padding:14px}
@@ -63,7 +67,7 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
 <style id="szStyle"></style>
 </head>
 <body>
-<header>📻 Log de Captações VHF/UHF</header>
+<header><img src="radio-icon.png" alt="" onerror="this.replaceWith('📻 ')">Log de Captações VHF/UHF</header>
 <nav id="nav">
   <button data-t="reg" class="on">📝 Registrar</button>
   <button data-t="lista">📋 Registros</button>
@@ -315,10 +319,11 @@ let cfg=JSON.parse(localStorage.getItem(TKEY)||'null')||{theme:'moderno',v:{...t
 cfg.v={colw:200,maxw:1050,...cfg.v};cfg.sz??={};
 function aplicar(){document.body.dataset.theme=cfg.theme;const st=document.documentElement.style;
   Object.entries(cfg.v).forEach(([k,v])=>st.setProperty('--'+k,['fs','ls','radius','colw','maxw'].includes(k)?v+'px':v));
+  document.querySelector('meta[name=theme-color]').content=cfg.v.header;
   localStorage.setItem(TKEY,JSON.stringify(cfg));}
 function aplicarTema(t){cfg={theme:t,v:{colw:200,maxw:1050,...temas[t]},sz:cfg.sz||{}};aplicar();montaCustom();}
 function montaCustom(){
-  $('custom').innerHTML=opts.map(([k,n,t,mi,ma,st])=>`<div><label>${n}${t==='range'?': <b id="v_'+k+'">'+cfg.v[k]+'</b>':''}</label>
+  $('custom').innerHTML=opts.map(([k,n,t,mi,ma,st])=>`<div><label>${n}${t==='range'?': <b id="v_${k}">'+cfg.v[k]+'</b>':''}</label>
    <input type="${t}" data-k="${k}" value="${cfg.v[k]}" ${t==='range'?`min="${mi}" max="${ma}" step="${st}"`:''}></div>`).join('')+
    `<div><label>Tipo de fonte</label><select data-k="font">${fontes.map(f=>`<option value='${f}' ${f===cfg.v.font?'selected':''} style='font-family:${f}'>${f.split(',')[0].replace(/"/g,'')}</option>`).join('')}</select></div>`;
   $('custom').querySelectorAll('[data-k]').forEach(el=>el.oninput=()=>{const k=el.dataset.k;
