@@ -47,6 +47,8 @@ small,.muted{color:var(--muted)}
 .modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;z-index:9999;padding:10px}
 .modal.on{display:flex}.modal .card{max-width:600px;width:100%;max-height:90vh;overflow:auto}
 table{width:100%;border-collapse:collapse}td{padding:4px;border-bottom:1px solid var(--border);vertical-align:top}td:first-child{color:var(--muted);width:35%}
+.hbar{font-size:.55em;font-weight:normal;margin-top:4px}.hbar button{padding:3px 10px;font-size:1em}
+.termos{max-height:140px;overflow:auto;font-size:.8em;background:var(--input);padding:8px;border-radius:6px;border:1px solid var(--border)}
 /* Windows XP */
 body[data-theme=xp] header,body[data-theme=xp] .card>h3{background:linear-gradient(#0997ff,#0053ee 8%,#0050ee 40%,#06f 88%,#005bff 95%,#003dd7);color:#fff;text-shadow:1px 1px #0f1089}
 body[data-theme=xp] .card{border:3px solid #0054e3;padding-top:0}
@@ -67,7 +69,13 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
 <style id="szStyle"></style>
 </head>
 <body>
-<header><img src="radio-icon.png" alt="" onerror="this.replaceWith('📻 ')">Log de Captações VHF/UHF</header>
+<div id="auth" class="modal on" style="background:var(--bg)"><div class="card" style="max-width:400px">
+  <h3>📻 Log VHF/UHF</h3><div id="authC"></div><p><small id="aMsg"></small></p>
+</div></div>
+
+<header><img src="radio-icon.png" alt="" onerror="this.replaceWith('📻 ')">Log de Captações VHF/UHF
+  <div class="hbar"><span id="uInfo"></span> · <span id="bkInfo" class="link" onclick="exportJSON()"></span>
+  <button onclick="minhaConta()">👤 Conta</button><button onclick="bloquear()">🔒 Bloquear</button></div></header>
 <nav id="nav">
   <button data-t="reg" class="on">📝 Registrar</button>
   <button data-t="lista">📋 Registros</button>
@@ -119,8 +127,8 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
     <input id="busca" placeholder="🔎 Buscar..." oninput="render()">
     <select id="fBanda" onchange="render()"><option value="">Todas as bandas</option><option>VHF</option><option>UHF</option><option>Outra</option></select>
   </div>
-  <button onclick="exportCSV()">⬇ CSV</button><button onclick="exportJSON()">⬇ Backup JSON</button>
-  <button onclick="imp.click()">⬆ Importar JSON</button>
+  <button onclick="exportCSV()">⬇ CSV</button><button onclick="exportJSON()">💾 Backup completo</button>
+  <button onclick="imp.click()">⬆ Restaurar backup</button>
   <input type="file" id="imp" accept=".json" hidden onchange="importar(event)">
   <p><small id="contador"></small></p><div id="itens"></div>
 </div></section>
@@ -144,7 +152,13 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
 
 <section class="tab" id="prop">
   <div class="card"><h3>🌤️ Condição de propagação (VHF/UHF)</h3>
+    <div class="grid"><div><label>Modelo meteorológico</label><select id="pModelo">
+      <option value="best_match">Automático (melhor disponível)</option>
+      <option value="ecmwf_ifs025">ECMWF IFS (Europa)</option>
+      <option value="gfs_seamless">GFS (NOAA/EUA)</option>
+      <option value="icon_seamless">ICON (DWD/Alemanha)</option></select></div></div>
     <button class="pri" onclick="propAuto()">🛰️ Buscar automático</button> <small id="pStat"></small>
+    <div id="pOrig"></div>
     <div class="grid" id="pCampos" style="margin-top:10px"></div>
     <button onclick="propCalc()">🧮 Calcular</button><button onclick="propUsar()">📝 Usar no registro</button>
     <div id="pRes"></div>
@@ -156,6 +170,7 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
     <tr><td><b>Fator k</b></td><td>"Raio efetivo da Terra". Normal = 1,33. Quanto maior, mais longe o sinal vai</td></tr>
     <tr><td><b>Inversão térmica</b></td><td>Ar mais quente em altitude: favorece o tropo (+10 pontos)</td></tr>
     <tr><td><b>Sem dados de altitude</b></td><td>O gradiente é estimado pela fórmula de Bean-Dutton (ΔN = −7,32·e^(0,005577·N)), que é menos precisa</td></tr>
+    <tr><td><b>Fonte dos dados</b></td><td>Open-Meteo (modelos numéricos em grade, não estações físicas). Endereço por OpenStreetMap/Nominatim</td></tr>
     <tr><td><b>Dicas</b></td><td>Fica melhor com alta pressão estável, no amanhecer ou entardecer e com neblina. Frentes frias e vento forte pioram</td></tr>
   </table></div>
 </section>
@@ -191,7 +206,7 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
 
 <script>
 const $=id=>document.getElementById(id);
-const KEY='logRadio',TKEY='logRadioTema',CKEY='logRadioCad';
+const KEY='logRadio',TKEY='logRadioTema',CKEY='logRadioCad',PKEY='logRadioPerfil',BKEY='logRadioBackup',VERSAO='2.0';
 const campos=['data','freq','radio','antena','modo','tom','sinal','duracao','indic','tipo','local','coord','ceu','chuva','vento','visib','temp','umid','pressao','prop','clima','obs'];
 const nomes={data:'Data/Hora',freq:'Frequência',banda:'Banda',radio:'Rádio',antena:'Antena',modo:'Modo',tom:'Tom',sinal:'Sinal',duracao:'Duração (min)',indic:'Indicativo',tipo:'Tipo',local:'Local',coord:'Coordenadas',ceu:'Céu',chuva:'Chuva',vento:'Vento',visib:'Visibilidade',temp:'Temperatura (°C)',umid:'Umidade (%)',pressao:'Pressão (hPa)',prop:'Propagação',clima:'Outras condições',obs:'Observações'};
 let regs=JSON.parse(localStorage.getItem(KEY)||'[]'),editId=null,map,layer;
@@ -230,7 +245,7 @@ function editar(id){const r=regs.find(x=>x.id===id);editId=id;fecha();
 function excluir(id){if(confirm('Excluir registro?')){regs=regs.filter(x=>x.id!==id);fecha();persist();}}
 function limpar(){editId=null;campos.forEach(c=>{if(!['modo','sinal','tipo','radio','antena','local','coord','ceu','chuva','vento','visib','temp','umid','pressao','prop'].includes(c))$(c).value=''});
   $('data').value=agora();$('banda').value='';$('titulo').textContent='Nova captação';}
-function persist(){localStorage.setItem(KEY,JSON.stringify(regs));render();if(map)marcadores();if($('hist').classList.contains('on'))historico();}
+function persist(){localStorage.setItem(KEY,JSON.stringify(regs));render();bkAviso();if(map)marcadores();if($('hist').classList.contains('on'))historico();}
 
 /* LISTA */
 function card(r){const cl=[r.ceu,r.chuva,r.temp&&r.temp+'°C',r.prop].filter(Boolean);
@@ -349,13 +364,23 @@ function szSet(){const id=$('szSel').value;if(!id)return;cfg.sz[id]={w:+$('szW')
 function szReset(){delete cfg.sz[$('szSel').value];aplicaSz();szLoad();}
 function szResetAll(){if(!confirm('Restaurar o tamanho de todas as caixas?'))return;cfg.sz={};aplicaSz();szLoad();}
 
-/* IMPORT/EXPORT */
+/* BACKUP / IMPORT / EXPORT */
 function baixar(n,c,t){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click();}
 function exportCSV(){const cab=['data','freq','banda',...campos.slice(2)];
   baixar('captacoes.csv','\uFEFF'+cab.map(c=>nomes[c]).join(';')+'\n'+regs.map(r=>cab.map(c=>'"'+String(r[c]??'').replace(/"/g,'""')+'"').join(';')).join('\n'),'text/csv');}
-function exportJSON(){baixar('captacoes_backup.json',JSON.stringify(regs,null,2),'application/json');}
-function importar(e){const fr=new FileReader();fr.onload=()=>{try{const d=JSON.parse(fr.result),ids=new Set(regs.map(r=>r.id));
-  regs=[...regs,...d.filter(r=>!ids.has(r.id))];persist();alert('Importado!');}catch{alert('Arquivo inválido');}};fr.readAsText(e.target.files[0]);}
+function exportJSON(){
+  const b={app:'LogVHF-UHF',versao:VERSAO,gerado:new Date().toISOString(),perfil:perfil?{nome:perfil.nome,indic:perfil.indic}:null,regs,cad,tema:cfg};
+  baixar(`backup_logvhf_${agora().slice(0,10)}.json`,JSON.stringify(b,null,2),'application/json');
+  localStorage.setItem(BKEY,Date.now());bkAviso();}
+function importar(e){const fr=new FileReader();fr.onload=()=>{try{
+  const d=JSON.parse(fr.result),lista=Array.isArray(d)?d:d.regs;if(!Array.isArray(lista))throw 0;
+  const ids=new Set(regs.map(r=>r.id)),novos=lista.filter(r=>!ids.has(r.id));regs=[...regs,...novos].sort((a,b)=>b.id-a.id);
+  if(d.cad)Object.keys(d.cad).forEach(k=>{cad[k]??=[];d.cad[k].forEach(v=>{if(!cad[k].includes(v))cad[k].push(v)})});
+  if(d.tema&&confirm('Aplicar também o tema salvo no backup?')){cfg=d.tema;cfg.sz??={};cfg.v={colw:200,maxw:1050,...cfg.v};aplicar();aplicaSz();montaCustom();}
+  persist();salvaCad();alert(`Restaurado! ${novos.length} registro(s) novo(s).`);}catch{alert('Arquivo inválido');}
+  e.target.value='';};fr.readAsText(e.target.files[0]);}
+function bkAviso(){const t=+localStorage.getItem(BKEY)||0,d=Math.floor((Date.now()-t)/864e5);
+  $('bkInfo').textContent=!t?(regs.length?'⚠️ Nenhum backup feito':'💾 Backup'):(d>7&&regs.length?`⚠️ Último backup há ${d} dias`:`💾 Backup: ${d?'há '+d+' dia(s)':'hoje'}`);}
 
 /* CADASTROS */
 const cadNomes={radio:'📻 Rádios',antena:'📡 Antenas',tipo:'🏷️ Tipos de transmissão',local:'📍 Locais',ceu:'☁️ Céu',chuva:'🌧️ Chuva',vento:'💨 Vento',visib:'🌫️ Visibilidade'};
@@ -409,18 +434,48 @@ function propCalc(){const r=pUlt=avaliar(nv('pT'),nv('pU'),nv('pP'),nv('pH')||0,
   <tr><td>Inversão térmica</td><td>${r.inv?'✅ Sim':'Não'}</td></tr></table>`;}
 function propUsar(){if(!pUlt)propCalc();$('temp').value=$('pT').value;$('umid').value=$('pU').value;$('pressao').value=$('pP').value;
   $('prop').value=`${pUlt.s}/100 ${pUlt.c}`;irPara('reg');}
+
+/* ORIGEM DOS DADOS */
+const haver=(a,b)=>{const r=Math.PI/180,dLa=(b[0]-a[0])*r,dLo=(b[1]-a[1])*r,
+  x=Math.sin(dLa/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)**2;return 2*6371*Math.asin(Math.sqrt(x))};
+async function ondeFica(p){try{
+  const j=await(await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${p[0]}&lon=${p[1]}&zoom=10&accept-language=pt-BR`)).json(),a=j.address||{};
+  return{cidade:a.city||a.town||a.village||a.municipality||a.county||'-',sub:a.state_district||'',regiao:a.region||'',estado:a.state||'-',pais:a.country||'-'};
+ }catch{return null}}
+
 async function propAuto(){
-  let p=latlon($('coord').value);
-  if(!p)p=await new Promise(ok=>navigator.geolocation?navigator.geolocation.getCurrentPosition(g=>ok([g.coords.latitude,g.coords.longitude]),()=>ok(null),{timeout:8000}):ok(null));
-  p??=[-30.03,-51.23];$('pStat').textContent='Buscando...';
+  let p=latlon($('coord').value),orig='📝 Coordenadas do formulário de registro';
+  if(!p){p=await new Promise(ok=>navigator.geolocation?navigator.geolocation.getCurrentPosition(g=>ok([g.coords.latitude,g.coords.longitude]),()=>ok(null),{timeout:8000}):ok(null));orig='📍 GPS do aparelho';}
+  if(!p){p=[-30.03,-51.23];orig='⚠️ Padrão (Porto Alegre), GPS indisponível';}
+  const mod=$('pModelo'),modNome=mod.options[mod.selectedIndex].text;
+  $('pStat').textContent='Buscando...';$('pOrig').innerHTML='';
   try{const v='temperature_2m,relative_humidity_2m,surface_pressure,temperature_925hPa,relative_humidity_925hPa,geopotential_height_925hPa';
-    const j=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p[0]}&longitude=${p[1]}&hourly=${v}&forecast_hours=24&timezone=auto`)).json(),H=j.hourly;
+    const [j,lugar]=await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p[0]}&longitude=${p[1]}&hourly=${v}&forecast_hours=24&timezone=auto&models=${mod.value}`).then(r=>r.json()),
+      ondeFica(p)]);
+    if(j.error)throw new Error(j.reason);
+    const H=j.hourly;
     const lin=i=>[H.temperature_2m[i],H.relative_humidity_2m[i],H.surface_pressure[i],j.elevation,H.temperature_925hPa[i],H.relative_humidity_925hPa[i],925,H.geopotential_height_925hPa[i]];
-    lin(0).forEach((x,k)=>$(pc[k][0]).value=x);propCalc();
-    $('pStat').textContent=`✅ ${p[0].toFixed(3)}, ${p[1].toFixed(3)} · ${new Date().toLocaleTimeString('pt-BR')}`;
+    lin(0).forEach((x,k)=>$(pc[k][0]).value=x??'');propCalc();
+    const grade=[j.latitude,j.longitude],dist=haver(p,grade);
+    const conf=dist<5?'🟢 Muito próximo':dist<15?'🟡 Próximo':'🔴 Distante, use com cautela';
+    $('pStat').textContent='✅ '+new Date().toLocaleTimeString('pt-BR');
+    $('pOrig').innerHTML=`<h4>📍 Origem dos dados</h4><table>
+     <tr><td>Como a posição foi obtida</td><td>${orig}</td></tr>
+     <tr><td>Ponto consultado</td><td>${p[0].toFixed(4)}, ${p[1].toFixed(4)}</td></tr>
+     ${lugar?`<tr><td>Cidade</td><td>${esc(lugar.cidade)}</td></tr>
+     ${lugar.sub?`<tr><td>Região intermediária</td><td>${esc(lugar.sub)}</td></tr>`:''}
+     <tr><td>Estado / Região</td><td>${esc(lugar.estado)}${lugar.regiao?' · '+esc(lugar.regiao):''}</td></tr>
+     <tr><td>País</td><td>${esc(lugar.pais)}</td></tr>`:'<tr><td>Endereço</td><td>Não foi possível identificar</td></tr>'}
+     <tr><td>Ponto da grade do modelo</td><td>${grade[0].toFixed(4)}, ${grade[1].toFixed(4)} · altitude ${j.elevation} m</td></tr>
+     <tr><td>Distância até a grade</td><td>${dist.toFixed(1)} km · ${conf}</td></tr>
+     <tr><td>Fonte / modelo</td><td>Open-Meteo · ${esc(modNome)}</td></tr>
+     <tr><td>Horário dos dados</td><td>${H.time[0].replace('T',' ')} (${esc(j.timezone_abbreviation||j.timezone)})</td></tr>
+     <tr><td>Tipo de dado</td><td>Previsão de modelo numérico, não é medição de estação física. Compare os modelos: se derem valores parecidos, a estimativa é mais confiável.</td></tr>
+     </table><small>Endereço: © OpenStreetMap / Nominatim</small>`;
     $('pPrev').innerHTML=H.time.map((t,i)=>{const r=avaliar(...lin(i));
       return`<div class="bar"><div style="width:${Math.max(12,r.s)}%;background:${r.cor}">${t.slice(11,16)} · ${r.s} ${r.c}${r.inv?' 🔥':''}</div></div>`}).join('');
-  }catch(e){$('pStat').textContent='❌ Falha ao buscar (sem internet?). Preencha manualmente.';}}
+  }catch(e){$('pStat').textContent='❌ Falha ao buscar ('+(e.message||'sem internet?')+'). Preencha manualmente.';}}
 
 /* CLIMA AUTOMÁTICO */
 $('local').onchange=()=>{const r=regs.find(x=>x.local===$('local').value&&x.coord);if(r)$('coord').value=r.coord;};
@@ -488,7 +543,70 @@ function renderInfo(){const q=$('buscaInfo').value.toLowerCase();
   $('infoC').innerHTML=INFO.map(([t,l])=>{const f=l.filter(([a,b])=>(a+' '+b+' '+t).toLowerCase().includes(q));
     return f.length?`<div class="card"><h3>${t}</h3><table>${f.map(([a,b])=>`<tr><td><b>${a}</b></td><td>${b}</td></tr>`).join('')}</table></div>`:''}).join('')||'<p class="muted">Nada encontrado.</p>';}
 
+/* ===== v2.0: PERFIL E SENHA LOCAIS ===== */
+let perfil=JSON.parse(localStorage.getItem(PKEY)||'null');
+const aMsg=t=>$('aMsg').textContent=t;
+async function hash(s,salt){const d=new TextEncoder().encode(salt+':'+s);
+  if(window.crypto?.subtle){let h=d;for(let i=0;i<1000;i++)h=new Uint8Array(await crypto.subtle.digest('SHA-256',h));return[...h].map(b=>b.toString(16).padStart(2,'0')).join('');}
+  let h=5381;for(const c of d)h=(h*33^c)>>>0;return'f'+h;}
+const TERMOS=`<div class="termos"><b>Termos de uso e privacidade</b><br>
+• Todos os dados ficam <b>somente neste aparelho</b>. Não existe servidor nem conta online.<br>
+• Você é responsável pelos seus backups. Limpar os dados do navegador ou trocar de aparelho apaga tudo.<br>
+• A senha só protege o acesso pela tela do app. Ela não pode ser recuperada, e esquecer a senha apaga os dados.<br>
+• As buscas de clima e endereço enviam somente as coordenadas para o Open-Meteo e o OpenStreetMap.<br>
+• Ouvir é permitido, mas não divulgue o conteúdo de comunicações privadas ou de serviços públicos (Lei 9.472/97).<br>
+• O app é fornecido "como está", sem garantias.</div>`;
+function telaAuth(){aMsg('');
+  $('authC').innerHTML=!perfil?`<p><b>Bem-vindo!</b> Crie seu perfil neste aparelho.</p>
+   <label>Nome</label><input id="aNome" autocomplete="name">
+   <label>Indicativo (opcional)</label><input id="aIndic" placeholder="PY3XXX / SWL">
+   <label>Senha (mín. 4)</label><input id="aSenha" type="password" autocomplete="new-password">
+   <label>Confirmar senha</label><input id="aSenha2" type="password" autocomplete="new-password">
+   ${TERMOS}<label style="margin-top:8px"><input type="checkbox" id="aTermos" style="width:auto"> Li e aceito os termos</label>
+   <button class="pri" onclick="criarPerfil()">Criar perfil</button>
+   <button onclick="imp.click()">⬆ Restaurar backup</button>`
+  :`<p>Olá, <b>${esc(perfil.nome)}</b>${perfil.indic?' ('+esc(perfil.indic)+')':''}!</p>
+   <label>Senha</label><input id="aSenha" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')entrar()">
+   <button class="pri" onclick="entrar()">🔓 Entrar</button><button onclick="esqueci()">Esqueci a senha</button>`;
+  $('auth').classList.add('on');setTimeout(()=>($('aNome')||$('aSenha'))?.focus(),50);}
+async function criarPerfil(){const nome=$('aNome').value.trim(),s=$('aSenha').value;
+  if(!nome)return aMsg('Informe seu nome.');if(s.length<4)return aMsg('A senha precisa ter no mínimo 4 caracteres.');
+  if(s!==$('aSenha2').value)return aMsg('As senhas não conferem.');if(!$('aTermos').checked)return aMsg('Você precisa aceitar os termos.');
+  const salt=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  perfil={nome,indic:$('aIndic').value.trim().toUpperCase(),salt,hash:await hash(s,salt),criado:Date.now(),termos:Date.now(),versao:VERSAO};
+  localStorage.setItem(PKEY,JSON.stringify(perfil));desbloquear();}
+async function entrar(){if(await hash($('aSenha').value,perfil.salt)!==perfil.hash){aMsg('❌ Senha incorreta.');$('aSenha').value='';return;}desbloquear();}
+function desbloquear(){sessionStorage.setItem('logRadioOK','1');$('auth').classList.remove('on');
+  $('uInfo').textContent='👤 '+perfil.nome+(perfil.indic?' · '+perfil.indic:'');bkAviso();}
+function bloquear(){sessionStorage.removeItem('logRadioOK');fecha();telaAuth();}
+function esqueci(){if(prompt('Sem servidor, não é possível recuperar a senha.\nPara continuar, o app vai APAGAR o perfil e TODOS os dados deste aparelho. Depois, crie um perfil novo e restaure seu backup.\n\nDigite APAGAR para confirmar:')!=='APAGAR')return;apagarLocal();}
+function apagarLocal(){[KEY,TKEY,CKEY,PKEY,BKEY].forEach(k=>localStorage.removeItem(k));sessionStorage.clear();location.reload();}
+
+function minhaConta(){const t=+localStorage.getItem(BKEY)||0;
+  $('modalC').innerHTML=`<h3>👤 Minha conta</h3><table>
+   <tr><td>Nome</td><td>${esc(perfil.nome)}</td></tr>
+   <tr><td>Indicativo</td><td>${esc(perfil.indic)||'-'}</td></tr>
+   <tr><td>Perfil criado em</td><td>${fmt(perfil.criado)}</td></tr>
+   <tr><td>Registros</td><td>${regs.length}</td></tr>
+   <tr><td>Último backup</td><td>${t?fmt(t):'⚠️ Nunca'}</td></tr>
+   <tr><td>Armazenamento</td><td>📱 Somente neste aparelho</td></tr>
+   <tr><td>Versão</td><td>${VERSAO}</td></tr></table>
+   <button onclick="editarPerfil()">✏️ Editar perfil</button><button onclick="trocarSenha()">🔑 Trocar senha</button>
+   <button class="pri" onclick="exportJSON()">💾 Fazer backup</button><button onclick="imp.click()">⬆ Restaurar</button>
+   <button class="del" onclick="apagarTudo()">🗑️ Apagar tudo</button><button onclick="fecha()">Fechar</button>`;
+  $('modal').classList.add('on');}
+function editarPerfil(){const n=prompt('Nome:',perfil.nome)?.trim();if(!n)return;const i=prompt('Indicativo:',perfil.indic)??perfil.indic;
+  perfil.nome=n;perfil.indic=i.trim().toUpperCase();localStorage.setItem(PKEY,JSON.stringify(perfil));desbloquear();minhaConta();}
+async function trocarSenha(){const a=prompt('Senha atual:');if(a==null)return;
+  if(await hash(a,perfil.salt)!==perfil.hash)return alert('Senha atual incorreta.');
+  const n=prompt('Nova senha (mín. 4):');if(!n||n.length<4)return alert('Senha muito curta.');
+  if(prompt('Confirme a nova senha:')!==n)return alert('As senhas não conferem.');
+  perfil.hash=await hash(n,perfil.salt);localStorage.setItem(PKEY,JSON.stringify(perfil));alert('Senha alterada!');}
+function apagarTudo(){if(regs.length&&confirm('Deseja fazer um backup antes de apagar?'))exportJSON();
+  if(prompt('Isso apaga o perfil e TODOS os dados deste aparelho.\nDigite EXCLUIR para confirmar:')!=='EXCLUIR')return;apagarLocal();}
+
 aplicar();aplicaSz();montaCustom();montaSelects();limpar();render();renderInfo();renderCad();propCalc();szLista();
+if(perfil&&sessionStorage.getItem('logRadioOK'))desbloquear();else telaAuth();
 </script>
 </body>
 </html>
