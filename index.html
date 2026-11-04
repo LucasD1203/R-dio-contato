@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Log de Captações VHF/UHF</title>
+<title>Log de Captações VHF/UHF/HF/PX</title>
 <link rel="icon" type="image/png" href="radio-icon.png">
 <link rel="apple-touch-icon" href="radio-icon.png">
 <meta name="theme-color" content="#0f172a">
@@ -31,9 +31,10 @@ button{padding:8px 14px;border:1px solid var(--border);border-radius:calc(var(--
 .pri{background:var(--accent);color:var(--btnText);border-color:var(--accent)}.del{background:#ef4444;color:#fff;border-color:#ef4444}
 .row{display:flex;gap:6px}.row input,.row select{flex:1;min-width:0}.row button{flex:none;margin:0}
 .item{border-left:4px solid #22c55e;background:var(--input);padding:10px;border-radius:calc(var(--radius)*.6);margin-bottom:8px}
-.item.UHF{border-left-color:#3b82f6}.item.Outra{border-left-color:#a855f7}
+.item.UHF{border-left-color:#3b82f6}.item.Outra{border-left-color:#a855f7}.item.HF{border-left-color:#f97316}.item.PX{border-left-color:#eab308}
 .freq{font-size:1.3em;font-weight:bold;color:var(--accent)}
 .tag{display:inline-block;background:var(--border);padding:1px 8px;border-radius:10px;font-size:.75em;margin-right:4px}
+.tag.dx{background:#ef4444;color:#fff}
 small,.muted{color:var(--muted)}
 .tab{display:none}.tab.on{display:block}
 #mapa{height:480px;border-radius:var(--radius)}
@@ -49,6 +50,8 @@ small,.muted{color:var(--muted)}
 table{width:100%;border-collapse:collapse}td{padding:4px;border-bottom:1px solid var(--border);vertical-align:top}td:first-child{color:var(--muted);width:35%}
 .hbar{font-size:.55em;font-weight:normal;margin-top:4px}.hbar button{padding:3px 10px;font-size:1em}
 .termos{max-height:140px;overflow:auto;font-size:.8em;background:var(--input);padding:8px;border-radius:6px;border:1px solid var(--border)}
+#dxBox{display:none}
+.dxHead{grid-column:1/-1;border-top:1px solid #ef4444;padding-top:8px}
 /* Windows XP */
 body[data-theme=xp] header,body[data-theme=xp] .card>h3{background:linear-gradient(#0997ff,#0053ee 8%,#0050ee 40%,#06f 88%,#005bff 95%,#003dd7);color:#fff;text-shadow:1px 1px #0f1089}
 body[data-theme=xp] .card{border:3px solid #0054e3;padding-top:0}
@@ -70,10 +73,10 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
 </head>
 <body>
 <div id="auth" class="modal on" style="background:var(--bg)"><div class="card" style="max-width:400px">
-  <h3>📻 Log VHF/UHF</h3><div id="authC"></div><p><small id="aMsg"></small></p>
+  <h3>📻 Log de Captações</h3><div id="authC"></div><p><small id="aMsg"></small></p>
 </div></div>
 
-<header><img src="radio-icon.png" alt="" onerror="this.replaceWith('📻 ')">Log de Captações VHF/UHF
+<header><img src="radio-icon.png" alt="" onerror="this.replaceWith('📻 ')">Log de Captações VHF/UHF/HF/PX
   <div class="hbar"><span id="uInfo"></span> · <span id="bkInfo" class="link" onclick="exportJSON()"></span>
   <button onclick="minhaConta()">👤 Conta</button><button onclick="bloquear()">🔒 Bloquear</button></div></header>
 <nav id="nav">
@@ -91,19 +94,32 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
   <h3 id="titulo">Nova captação</h3>
   <div class="grid">
     <div><label>Data/Hora</label><input type="datetime-local" id="data"></div>
-    <div><label>Frequência (MHz)</label><input type="number" step="0.0001" id="freq" placeholder="145.5000"></div>
+    <div><label>Frequência (MHz)</label><input type="number" step="0.0001" id="freq" placeholder="145.5000 / 27.065 / 7.100"></div>
     <div><label>Banda</label><input id="banda" readonly></div>
     <div><label>Rádio utilizado</label><div class="row"><select id="radio"></select><button onclick="addCad('radio')">➕</button></div></div>
     <div><label>Antena</label><div class="row"><select id="antena"></select><button onclick="addCad('antena')">➕</button></div></div>
-    <div><label>Modo</label><select id="modo"><option>FM</option><option>NFM</option><option>AM</option><option>SSB</option><option>Digital (DMR)</option><option>Digital (C4FM)</option><option>Outro</option></select></div>
+    <div><label>Modo</label><select id="modo"><option>FM</option><option>NFM</option><option>AM</option><option>SSB</option><option>USB</option><option>LSB</option><option>CW</option><option>FT8</option><option>Digital (DMR)</option><option>Digital (C4FM)</option><option>Outro</option></select></div>
     <div><label>Tom CTCSS/DCS</label><input id="tom" placeholder="88.5 Hz / D023"></div>
     <div><label>Sinal</label><select id="sinal"><option>S1</option><option>S3</option><option selected>S5</option><option>S7</option><option>S9</option><option>S9+</option></select></div>
     <div><label>Duração (min)</label><input type="number" id="duracao" min="0"></div>
     <div><label>Indicativo / Identificação</label><input id="indic" placeholder="PY3XXX, repetidora..."></div>
     <div><label>Tipo</label><div class="row"><select id="tipo"></select><button onclick="addCad('tipo')">➕</button></div></div>
-    <div><label>Local</label><div class="row"><select id="local"></select><button onclick="addCad('local')">➕</button></div></div>
-    <div><label>Coordenadas (lat, lon)</label>
-      <div class="row"><input id="coord" placeholder="-30.03, -51.23"><button onclick="gps()">📍</button></div></div>
+    <div><label>Local (minha posição)</label><div class="row"><select id="local"></select><button onclick="addCad('local')">➕</button></div></div>
+    <div><label>Minhas coordenadas (lat, lon)</label>
+      <div class="row"><input id="coord" placeholder="-29.17, -51.18" oninput="dxCalc()"><button onclick="gps()">📍</button></div></div>
+    <div><label>Tipo de contato</label><select id="dx" onchange="dxShow()"><option value="">Local / comum</option><option value="DX">🌍 DX (longa distância)</option></select></div>
+
+    <div id="dxBox" style="display:none">
+      <div class="dxHead"><b>🌍 Estação DX</b> <small id="dxStat"></small></div>
+      <div><label>Indicativo da estação DX</label><div class="row"><input id="dxIndic" placeholder="W1AW, LU1ABC, PY2XX" onkeydown="if(event.key==='Enter')buscaIndic()"><button onclick="buscaIndic()">🔎</button></div></div>
+      <div><label>Nome do operador</label><input id="dxNome"></div>
+      <div><label>Cidade / Estado</label><div class="row"><input id="dxCidade" placeholder="Digite e clique 🔎 p/ localizar"><button onclick="geoCidade()">📌</button></div></div>
+      <div><label>País</label><input id="dxPais"></div>
+      <div><label>Locator (grid)</label><input id="dxGrid" placeholder="GG40" oninput="dxGridSet()"></div>
+      <div><label>Coordenadas DX (lat, lon)</label><input id="dxCoord" oninput="dxCalc()"></div>
+      <div><label>Distância (km)</label><input id="dxDist" readonly></div>
+    </div>
+
     <div style="grid-column:1/-1;border-top:1px solid var(--border);padding-top:8px"><b>🌦️ Condições do tempo</b> <button onclick="climaAuto()">🛰️ Preencher automático</button> <small id="cStat"></small></div>
     <div><label>Céu</label><div class="row"><select id="ceu"></select><button onclick="addCad('ceu')">➕</button></div></div>
     <div><label>Chuva</label><div class="row"><select id="chuva"></select><button onclick="addCad('chuva')">➕</button></div></div>
@@ -125,7 +141,7 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
   <h3>Registros</h3>
   <div class="grid">
     <input id="busca" placeholder="🔎 Buscar..." oninput="render()">
-    <select id="fBanda" onchange="render()"><option value="">Todas as bandas</option><option>VHF</option><option>UHF</option><option>Outra</option></select>
+    <select id="fBanda" onchange="render()"><option value="">Todas as bandas</option><option>VHF</option><option>UHF</option><option>HF</option><option>PX</option><option>Outra</option><option value="DX">🌍 Só DX</option></select>
   </div>
   <button onclick="exportCSV()">⬇ CSV</button><button onclick="exportJSON()">💾 Backup completo</button>
   <button onclick="imp.click()">⬆ Restaurar backup</button>
@@ -135,7 +151,8 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
 
 <section class="tab" id="mapaT"><div class="card">
   <h3>Mapa das captações</h3>
-  <small>🟢 VHF · 🔵 UHF · 🟣 Outra — clique no mapa para usar o ponto em um novo registro.</small>
+  <small>🟢 VHF · 🔵 UHF · 🟠 HF · 🟡 PX · 🟣 Outra · 🔴 Estação DX (linha = rota pelo globo)</small>
+  <label style="margin:6px 0"><input type="checkbox" id="mDist" checked style="width:auto" onchange="marcadores()"> Mostrar distâncias DX no mapa</label>
   <div id="mapa"></div>
 </div></section>
 
@@ -146,6 +163,7 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
     <div class="card"><h3>Por rádio</h3><div id="gRadio"></div></div>
     <div class="card"><h3>Por hora do dia</h3><div id="gHora"></div></div>
   </div>
+  <div class="card"><h3>🌍 DX mais distantes</h3><div id="topDX"></div></div>
   <div class="card"><h3>Frequências mais captadas</h3><div id="topF"></div></div>
   <div class="card"><h3>Linha do tempo</h3><div id="timeline"></div></div>
 </section>
@@ -170,6 +188,7 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
     <tr><td><b>Fator k</b></td><td>"Raio efetivo da Terra". Normal = 1,33. Quanto maior, mais longe o sinal vai</td></tr>
     <tr><td><b>Inversão térmica</b></td><td>Ar mais quente em altitude: favorece o tropo (+10 pontos)</td></tr>
     <tr><td><b>Sem dados de altitude</b></td><td>O gradiente é estimado pela fórmula de Bean-Dutton (ΔN = −7,32·e^(0,005577·N)), que é menos precisa</td></tr>
+    <tr><td><b>HF / PX</b></td><td>Esta avaliação vale para VHF/UHF (troposfera). HF e PX dependem da ionosfera (ciclo solar, hora do dia)</td></tr>
     <tr><td><b>Fonte dos dados</b></td><td>Open-Meteo (modelos numéricos em grade, não estações físicas). Endereço por OpenStreetMap/Nominatim</td></tr>
     <tr><td><b>Dicas</b></td><td>Fica melhor com alta pressão estável, no amanhecer ou entardecer e com neblina. Frentes frias e vento forte pioram</td></tr>
   </table></div>
@@ -206,9 +225,11 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
 
 <script>
 const $=id=>document.getElementById(id);
-const KEY='logRadio',TKEY='logRadioTema',CKEY='logRadioCad',PKEY='logRadioPerfil',BKEY='logRadioBackup',VERSAO='2.0';
-const campos=['data','freq','radio','antena','modo','tom','sinal','duracao','indic','tipo','local','coord','ceu','chuva','vento','visib','temp','umid','pressao','prop','clima','obs'];
-const nomes={data:'Data/Hora',freq:'Frequência',banda:'Banda',radio:'Rádio',antena:'Antena',modo:'Modo',tom:'Tom',sinal:'Sinal',duracao:'Duração (min)',indic:'Indicativo',tipo:'Tipo',local:'Local',coord:'Coordenadas',ceu:'Céu',chuva:'Chuva',vento:'Vento',visib:'Visibilidade',temp:'Temperatura (°C)',umid:'Umidade (%)',pressao:'Pressão (hPa)',prop:'Propagação',clima:'Outras condições',obs:'Observações'};
+const KEY='logRadio',TKEY='logRadioTema',CKEY='logRadioCad',PKEY='logRadioPerfil',BKEY='logRadioBackup',VERSAO='2.1';
+const campos=['data','freq','radio','antena','modo','tom','sinal','duracao','indic','tipo','local','coord','dx','dxIndic','dxNome','dxCidade','dxPais','dxGrid','dxCoord','dxDist','ceu','chuva','vento','visib','temp','umid','pressao','prop','clima','obs'];
+const nomes={data:'Data/Hora',freq:'Frequência',banda:'Banda',radio:'Rádio',antena:'Antena',modo:'Modo',tom:'Tom',sinal:'Sinal',duracao:'Duração (min)',indic:'Indicativo',tipo:'Tipo',local:'Local',coord:'Minhas coordenadas',
+ dx:'Contato',dxIndic:'Indicativo DX',dxNome:'Operador DX',dxCidade:'Cidade DX',dxPais:'País DX',dxGrid:'Locator DX',dxCoord:'Coordenadas DX',dxDist:'Distância (km)',
+ ceu:'Céu',chuva:'Chuva',vento:'Vento',visib:'Visibilidade',temp:'Temperatura (°C)',umid:'Umidade (%)',pressao:'Pressão (hPa)',prop:'Propagação',clima:'Outras condições',obs:'Observações'};
 let regs=JSON.parse(localStorage.getItem(KEY)||'[]'),editId=null,map,layer;
 regs.forEach(r=>{if(!r.coord&&/-?\d+\.\d+\s*,\s*-?\d+\.\d+/.test(r.local||''))r.coord=r.local;r.criado??=r.id;});
 
@@ -220,7 +241,8 @@ $('nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;
 const irPara=t=>document.querySelector(`nav [data-t=${t}]`).click();
 
 /* REGISTRO */
-const banda=f=>{f=parseFloat(f);if(!f)return'';return f>=30&&f<300?'VHF':f>=300&&f<3000?'UHF':'Outra'};
+const banda=f=>{f=parseFloat(f);if(!f)return'';
+  return f>=26.965&&f<=27.405?'PX':f>=1.8&&f<30?'HF':f>=30&&f<300?'VHF':f>=300&&f<3000?'UHF':'Outra'};
 $('freq').oninput=()=>$('banda').value=banda($('freq').value);
 const agora=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)};
 const fmt=d=>new Date(d).toLocaleString('pt-BR');
@@ -230,10 +252,12 @@ const fecha=()=>$('modal').classList.remove('on');
 const setVal=(el,v)=>{if(el.tagName==='SELECT'&&v&&![...el.options].some(o=>o.value===v))el.add(new Option(v));el.value=v||'';};
 
 function gps(){if(!navigator.geolocation)return alert('GPS indisponível');
-  navigator.geolocation.getCurrentPosition(p=>$('coord').value=p.coords.latitude.toFixed(5)+', '+p.coords.longitude.toFixed(5),e=>alert('Erro: '+e.message),{enableHighAccuracy:true});}
+  navigator.geolocation.getCurrentPosition(p=>{$('coord').value=p.coords.latitude.toFixed(5)+', '+p.coords.longitude.toFixed(5);dxCalc();},e=>alert('Erro: '+e.message),{enableHighAccuracy:true});}
 
 function salvar(){
   if(!$('freq').value)return alert('Informe a frequência');
+  if($('dx').value&&!$('dxIndic').value.trim()&&!$('dxCidade').value.trim())return alert('Informe o indicativo ou a cidade da estação DX');
+  dxCalc();
   const ant=regs.find(x=>x.id===editId);
   const r={id:editId||Date.now(),criado:ant?.criado||Date.now(),edicoes:ant?(ant.edicoes||0)+1:0,editado:ant?Date.now():null};
   campos.forEach(c=>r[c]=$(c).value.trim());r.banda=banda(r.freq);
@@ -241,80 +265,142 @@ function salvar(){
   persist();limpar();alert('Salvo!');
 }
 function editar(id){const r=regs.find(x=>x.id===id);editId=id;fecha();
-  campos.forEach(c=>setVal($(c),r[c]));$('banda').value=r.banda;$('titulo').textContent='Editando captação';irPara('reg');}
+  campos.forEach(c=>setVal($(c),r[c]));$('banda').value=r.banda;dxShow();$('titulo').textContent='Editando captação';irPara('reg');}
 function excluir(id){if(confirm('Excluir registro?')){regs=regs.filter(x=>x.id!==id);fecha();persist();}}
 function limpar(){editId=null;campos.forEach(c=>{if(!['modo','sinal','tipo','radio','antena','local','coord','ceu','chuva','vento','visib','temp','umid','pressao','prop'].includes(c))$(c).value=''});
-  $('data').value=agora();$('banda').value='';$('titulo').textContent='Nova captação';}
+  $('data').value=agora();$('banda').value='';$('dxStat').innerHTML='';dxShow();$('titulo').textContent='Nova captação';}
 function persist(){localStorage.setItem(KEY,JSON.stringify(regs));render();bkAviso();if(map)marcadores();if($('hist').classList.contains('on'))historico();}
+
+/* ===== DX ===== */
+function dxShow(){$('dxBox').style.display=$('dx').value?'contents':'none';}
+const haver=(a,b)=>{const r=Math.PI/180,dLa=(b[0]-a[0])*r,dLo=(b[1]-a[1])*r,
+  x=Math.sin(dLa/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)**2;return 2*6371*Math.asin(Math.sqrt(x))};
+function dxCalc(){const a=latlon($('coord').value),b=latlon($('dxCoord').value);$('dxDist').value=a&&b?haver(a,b).toFixed(1):'';}
+function grid2ll(g){g=(g||'').trim().toUpperCase();if(!/^[A-R]{2}\d{2}([A-X]{2})?$/.test(g))return null;
+  let lon=(g.charCodeAt(0)-65)*20-180+(+g[2])*2,lat=(g.charCodeAt(1)-65)*10-90+(+g[3]);
+  if(g.length===6){lon+=(g.charCodeAt(4)-65)*5/60+2.5/60;lat+=(g.charCodeAt(5)-65)*2.5/60+1.25/60;}else{lon+=1;lat+=.5;}return[lat,lon];}
+function dxGridSet(){const p=grid2ll($('dxGrid').value);if(p){$('dxCoord').value=p[0].toFixed(4)+', '+p[1].toFixed(4);dxCalc();}}
+const BRREG={1:['RJ / ES',-22.5,-42.5],2:['SP',-22.5,-48.5],3:['RS',-29.8,-53.5],4:['MG',-18.5,-44.5],5:['PR / SC',-26,-51],6:['BA / SE',-12.5,-41],7:['Nordeste',-7.5,-38],8:['Norte',-4,-56],9:['Centro-Oeste',-15.5,-52]};
+const PFX=[[/^(P[P-Y]|Z[V-Z])/,'Brasil',-14,-52],[/^(L[O-W]|AY|AZ)/,'Argentina',-34,-64],[/^C[V-X]/,'Uruguai',-33,-56],[/^(CE|CA|XQ|3G)/,'Chile',-33,-71],
+ [/^ZP/,'Paraguai',-25,-58],[/^CP/,'Bolívia',-17,-65],[/^O[A-C]/,'Peru',-10,-76],[/^(HK|HJ|5[JK])/,'Colômbia',4,-73],[/^(YV|4M)/,'Venezuela',7,-66],
+ [/^H[CD]/,'Equador',-1.5,-78],[/^(CO|CM|CL|T4)/,'Cuba',22,-79],[/^(V[A-GOY]|C[F-KYZ]|X[J-O])/,'Canadá',56,-106],[/^(X[A-I]|4[A-C]|6[D-J])/,'México',23,-102],
+ [/^(K|W|N|A[A-L])/,'Estados Unidos',39,-98],[/^E[A-H]/,'Espanha',40,-4],[/^(C[Q-U])/,'Portugal',39.5,-8],[/^E[IJ]/,'Irlanda',53,-8],[/^(F|T[HKMOPQVWX])/,'França',46,2],
+ [/^I/,'Itália',42.8,12.5],[/^D[A-R]/,'Alemanha',51,10],[/^(G|M|2[EIJMUW])/,'Reino Unido',54,-2],[/^P[A-I]/,'Holanda',52.2,5.3],[/^O[N-T]/,'Bélgica',50.6,4.6],
+ [/^HB/,'Suíça',46.8,8.2],[/^OE/,'Áustria',47.5,14.5],[/^(S[N-R]|3Z|HF)/,'Polônia',52,19],[/^(J[A-S]|7[J-N]|8[J-N])/,'Japão',36,138],
+ [/^(V[H-NZ]|AX)/,'Austrália',-25,134],[/^Z[LM]/,'Nova Zelândia',-41,174],[/^Z[R-U]/,'África do Sul',-29,24],[/^(R|U[A-I])/,'Rússia',56,38],[/^B[A-LR-Z]/,'China',35,105]];
+function prefixo(c){const b=c.split('/').sort((a,z)=>z.length-a.length)[0],f=PFX.find(([re])=>re.test(b));if(!f)return null;
+  const o={pais:f[1],lat:f[2],lon:f[3],reg:''};
+  if(f[1]==='Brasil'){const d=b.match(/\d/)?.[0],r=BRREG[d];if(r){o.reg=r[0];o.lat=r[1];o.lon=r[2];}}return o;}
+async function geocode(q){try{const j=await(await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=pt-BR&q=${encodeURIComponent(q)}`)).json();
+  return j[0]?{lat:+j[0].lat,lon:+j[0].lon,nome:j[0].display_name}:null}catch{return null}}
+const setDxPos=(la,lo)=>{$('dxCoord').value=(+la).toFixed(4)+', '+(+lo).toFixed(4);dxCalc();};
+async function geoCidade(){const q=[$('dxCidade').value,$('dxPais').value].filter(Boolean).join(', ');if(!q)return alert('Digite a cidade');
+  $('dxStat').textContent='Localizando...';const g=await geocode(q);
+  if(g){setDxPos(g.lat,g.lon);$('dxStat').textContent='📌 '+g.nome+' (OpenStreetMap)';}else $('dxStat').textContent='❌ Cidade não encontrada';}
+async function buscaIndic(){
+  const c=$('dxIndic').value.trim().toUpperCase().replace(/[^A-Z0-9\/]/g,'');if(!c)return alert('Informe o indicativo');
+  $('dxIndic').value=c;const base=c.split('/').sort((a,z)=>z.length-a.length)[0];$('dxStat').textContent='🔎 Buscando '+c+'...';
+  let d=null,fonte='';
+  try{const j=await(await fetch(`https://api.hamdb.org/v1/${base}/json/logvhfuhf`)).json(),h=j.hamdb?.callsign;
+    if(h&&j.hamdb.messages?.status==='OK'&&h.call!=='NOT_FOUND'){d={nome:[h.fname,h.name].filter(Boolean).join(' '),cidade:[h.addr2,h.state].filter(Boolean).join(' - '),pais:h.country,lat:+h.lat,lon:+h.lon,grid:h.grid};fonte='HamDB';}}catch{}
+  if(!d)try{const j=await(await fetch(`https://callook.info/${base}/json`)).json();
+    if(j.status==='VALID'){d={nome:j.name,cidade:j.address?.line2,pais:'Estados Unidos',lat:+j.location?.latitude,lon:+j.location?.longitude,grid:j.location?.gridsquare};fonte='Callook (FCC)';}}catch{}
+  const pf=prefixo(c);
+  if(d){if(d.nome)$('dxNome').value=d.nome;if(d.cidade)$('dxCidade').value=d.cidade;if(d.pais)$('dxPais').value=d.pais;if(d.grid)$('dxGrid').value=d.grid;}
+  else{fonte='Tabela de prefixos';if(pf){$('dxPais').value=pf.pais;if(!$('dxCidade').value&&pf.reg)$('dxCidade').value=pf.reg;}}
+  let pos='';
+  if(d&&d.lat&&!isNaN(d.lat)){setDxPos(d.lat,d.lon);pos='🟢 posição do cadastro';}
+  else{const cid=$('dxCidade').value,g=cid&&cid!==pf?.reg?await geocode([cid,$('dxPais').value].filter(Boolean).join(', ')):null;
+    if(g){setDxPos(g.lat,g.lon);pos='🟢 cidade localizada (OpenStreetMap)';}
+    else if(pf){setDxPos(pf.lat,pf.lon);pos='🟡 posição APROXIMADA ('+(pf.reg||'centro do país')+'). Digite a cidade e clique 📌 para precisão';}
+    else pos='🔴 posição não encontrada, digite a cidade e clique 📌';}
+  $('dxStat').innerHTML=`${d?'✅ Encontrado':'⚠️ Não está nas bases gratuitas'} · Fonte: ${fonte} · ${pos} · <a href="https://www.qrz.com/db/${encodeURIComponent(base)}" target="_blank">Ver no QRZ.com</a>`;}
+function gc(a,b,n=64){const r=Math.PI/180,d=haver(a,b)/6371;if(d<1e-6)return[a,b];
+  const[la1,lo1,la2,lo2]=[a[0]*r,a[1]*r,b[0]*r,b[1]*r],pts=[];
+  for(let i=0;i<=n;i++){const f=i/n,A=Math.sin((1-f)*d)/Math.sin(d),B=Math.sin(f*d)/Math.sin(d);
+    const x=A*Math.cos(la1)*Math.cos(lo1)+B*Math.cos(la2)*Math.cos(lo2),y=A*Math.cos(la1)*Math.sin(lo1)+B*Math.cos(la2)*Math.sin(lo2),z=A*Math.sin(la1)+B*Math.sin(la2);
+    let lon=Math.atan2(y,x)/r;if(pts.length){const p=pts.at(-1)[1];while(lon-p>180)lon-=360;while(lon-p<-180)lon+=360;}
+    pts.push([Math.atan2(z,Math.hypot(x,y))/r,lon]);}return pts;}
 
 /* LISTA */
 function card(r){const cl=[r.ceu,r.chuva,r.temp&&r.temp+'°C',r.prop].filter(Boolean);
   return`<div class="item ${r.banda}">
   <span class="freq link" onclick="detalhe(${r.id})">${(+r.freq).toFixed(4)} MHz</span>
-  <span class="tag">${r.banda}</span><span class="tag">${esc(r.modo)}</span><span class="tag">${esc(r.sinal)}</span><span class="tag">${esc(r.tipo)}</span>
+  <span class="tag">${r.banda}</span>${r.dx?'<span class="tag dx">🌍 DX</span>':''}<span class="tag">${esc(r.modo)}</span><span class="tag">${esc(r.sinal)}</span><span class="tag">${esc(r.tipo)}</span>
   <br><small>📅 ${fmt(r.data)} · 📻 ${esc(r.radio)||'-'} · 📍 ${esc(r.local||r.coord)||'-'}${r.indic?' · 🆔 '+esc(r.indic):''}</small>
+  ${r.dx?`<br><small>🌍 ↔ <b>${esc(r.dxIndic)||'-'}</b> ${esc(r.dxNome)} · ${esc([r.dxCidade,r.dxPais].filter(Boolean).join(', '))}${r.dxDist?' · 📏 <b>'+(+r.dxDist).toLocaleString('pt-BR')+' km</b>':''}</small>`:''}
   ${cl.length?'<br><small>🌦️ '+esc(cl.join(' · '))+'</small>':''}
   ${r.obs?'<p style="margin:6px 0">'+esc(r.obs)+'</p>':''}
   <div><button onclick="detalhe(${r.id})">🔍 Detalhes</button><button onclick="editar(${r.id})">✏️</button>
-  ${latlon(r.coord)?`<button onclick="verMapa(${r.id})">🗺️</button>`:''}<button class="del" onclick="excluir(${r.id})">🗑️</button></div></div>`}
+  ${latlon(r.coord)||latlon(r.dxCoord)?`<button onclick="verMapa(${r.id})">🗺️</button>`:''}<button class="del" onclick="excluir(${r.id})">🗑️</button></div></div>`}
 function render(){
   const q=$('busca').value.toLowerCase(),fb=$('fBanda').value;
-  const f=regs.filter(r=>(!fb||r.banda===fb)&&JSON.stringify(r).toLowerCase().includes(q));
+  const f=regs.filter(r=>(!fb||(fb==='DX'?r.dx:r.banda===fb))&&JSON.stringify(r).toLowerCase().includes(q));
   $('contador').textContent=f.length+' de '+regs.length+' registros';$('itens').innerHTML=f.map(card).join('')||'<p class="muted">Nenhum registro.</p>';
 }
 
 /* DETALHE */
 function detalhe(id){const r=regs.find(x=>x.id===id);
   const mesma=regs.filter(x=>x.freq===r.freq).sort((a,b)=>a.data<b.data?-1:1);
+  const cs=['data','banda',...campos.slice(2)].filter(c=>r.dx||!c.startsWith('dx'));
   $('modalC').innerHTML=`<h3>📻 ${(+r.freq).toFixed(4)} MHz</h3><table>
-   ${['data','banda',...campos.slice(2)].map(c=>`<tr><td>${nomes[c]}</td><td>${c==='data'?fmt(r.data):esc(r[c])||'-'}</td></tr>`).join('')}
+   ${cs.map(c=>`<tr><td>${nomes[c]}</td><td>${c==='data'?fmt(r.data):esc(r[c])||'-'}</td></tr>`).join('')}
    <tr><td>Registrado em</td><td>${fmt(r.criado)}</td></tr>
    ${r.editado?`<tr><td>Última edição</td><td>${fmt(r.editado)} (${r.edicoes}x)</td></tr>`:''}</table>
    <h4>Histórico desta frequência (${mesma.length} captações)</h4>
    <small>Primeira: ${fmt(mesma[0].data)} · Última: ${fmt(mesma.at(-1).data)}</small>
    <ul>${mesma.map(x=>`<li class="${x.id===id?'':'link'}" onclick="detalhe(${x.id})">${fmt(x.data)} – ${esc(x.sinal)} – ${esc(x.radio)||'-'} – ${esc(x.local)||'-'}</li>`).join('')}</ul>
-   <button onclick="editar(${id})">✏️ Editar</button>${latlon(r.coord)?`<button onclick="verMapa(${id})">🗺️ Mapa</button>`:''}
+   <button onclick="editar(${id})">✏️ Editar</button>${latlon(r.coord)||latlon(r.dxCoord)?`<button onclick="verMapa(${id})">🗺️ Mapa</button>`:''}
    <button class="del" onclick="excluir(${id})">🗑️</button><button onclick="fecha()">Fechar</button>`;
   $('modal').classList.add('on');}
 
 /* MAPA */
-const cor={VHF:'#22c55e',UHF:'#3b82f6',Outra:'#a855f7'};
+const cor={VHF:'#22c55e',UHF:'#3b82f6',HF:'#f97316',PX:'#eab308',Outra:'#a855f7'};
 function initMapa(){
   if(typeof L==='undefined')return alert('Sem internet: o mapa não pôde ser carregado.');
-  if(!map){map=L.map('mapa').setView([-30.03,-51.23],10);
+  if(!map){map=L.map('mapa',{worldCopyJump:true}).setView([-29.17,-51.18],10);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
     layer=L.layerGroup().addTo(map);
     map.on('click',e=>{if(confirm('Usar este ponto em um novo registro?')){limpar();$('coord').value=e.latlng.lat.toFixed(5)+', '+e.latlng.lng.toFixed(5);irPara('reg');}});
     marcadores(true);}
   setTimeout(()=>map.invalidateSize(),100);
 }
-function marcadores(fit){layer.clearLayers();const pts=[];
-  regs.forEach(r=>{const p=latlon(r.coord);if(!p)return;pts.push(p);
-    L.circleMarker(p,{radius:9,color:'#000',weight:1,fillColor:cor[r.banda]||'#999',fillOpacity:.85}).addTo(layer)
-     .bindPopup(`<b>${(+r.freq).toFixed(4)} MHz</b> (${r.banda})<br>${fmt(r.data)}<br>📻 ${esc(r.radio)}<br>${esc(r.sinal)} · ${esc(r.tipo)}<br><a href="#" onclick="detalhe(${r.id});return false">Detalhes</a>`);});
+function marcadores(fit){if(!layer)return;layer.clearLayers();const pts=[],lbl=$('mDist').checked;
+  regs.forEach(r=>{const p=latlon(r.coord),q=r.dx?latlon(r.dxCoord):null;
+    if(p){pts.push(p);L.circleMarker(p,{radius:9,color:'#000',weight:1,fillColor:cor[r.banda]||'#999',fillOpacity:.85}).addTo(layer)
+     .bindPopup(`<b>${(+r.freq).toFixed(4)} MHz</b> (${r.banda})<br>${fmt(r.data)}<br>📻 ${esc(r.radio)}<br>${esc(r.sinal)} · ${esc(r.tipo)}<br><a href="#" onclick="detalhe(${r.id});return false">Detalhes</a>`);}
+    if(q){pts.push(q);const pop=`<b>🌍 ${esc(r.dxIndic)||'DX'}</b> ${esc(r.dxNome)}<br>${esc([r.dxCidade,r.dxPais].filter(Boolean).join(', '))}<br>${(+r.freq).toFixed(4)} MHz · ${r.banda} · ${esc(r.modo)}<br>${fmt(r.data)}${p?'<br>📏 '+haver(p,q).toFixed(0)+' km':''}<br><a href="#" onclick="detalhe(${r.id});return false">Detalhes</a>`;
+      L.circleMarker(q,{radius:7,color:'#000',weight:1,fillColor:'#ef4444',fillOpacity:.9}).addTo(layer).bindPopup(pop);
+      if(p){const ln=L.polyline(gc(p,q),{color:'#ef4444',weight:2.5,dashArray:'6 4'}).addTo(layer).bindPopup(pop);
+        if(lbl)ln.bindTooltip(`${esc(r.dxIndic)||'DX'} · ${haver(p,q).toLocaleString('pt-BR',{maximumFractionDigits:0})} km`,{permanent:true,direction:'center'});}}});
   if(fit&&pts.length)map.fitBounds(pts,{padding:[30,30],maxZoom:13});}
-function verMapa(id){fecha();irPara('mapaT');const p=latlon(regs.find(x=>x.id===id).coord);
-  setTimeout(()=>{if(!map)return;map.setView(p,14);layer.eachLayer(m=>{const l=m.getLatLng();if(l.lat===p[0]&&l.lng===p[1])m.openPopup();});},200);}
+function verMapa(id){fecha();irPara('mapaT');const r=regs.find(x=>x.id===id),p=latlon(r.coord),q=r.dx?latlon(r.dxCoord):null;
+  setTimeout(()=>{if(!map)return;if(p&&q)map.fitBounds(gc(p,q),{padding:[40,40]});else map.setView(p||q,14);
+    const alvo=q||p;layer.eachLayer(m=>{if(!m.getLatLng)return;const l=m.getLatLng();if(l.lat===alvo[0]&&l.lng===alvo[1])m.openPopup();});},200);}
 
 /* HISTÓRICO */
 const conta=(arr,fn)=>arr.reduce((o,r)=>{const k=fn(r)||'—';o[k]=(o[k]||0)+1;return o},{});
 const barras=o=>{const e=Object.entries(o).sort((a,b)=>b[1]-a[1]),m=Math.max(1,...e.map(x=>x[1]));
   return e.map(([k,v])=>`<div class="bar"><div style="width:${Math.max(15,v/m*100)}%">${esc(k)}: ${v}</div></div>`).join('')||'<small>Sem dados</small>'};
 function historico(){
-  const freqs=conta(regs,r=>r.freq),dias=conta(regs,r=>r.data.slice(0,10));
+  const freqs=conta(regs,r=>r.freq),dias=conta(regs,r=>r.data.slice(0,10)),dxs=regs.filter(r=>r.dx);
+  const dxd=dxs.filter(r=>+r.dxDist).sort((a,b)=>b.dxDist-a.dxDist);
   const s=[['Captações',regs.length],['Frequências únicas',Object.keys(freqs).length],['Rádios',new Set(regs.map(r=>r.radio).filter(Boolean)).size],
    ['Dias de escuta',Object.keys(dias).length],['Com localização',regs.filter(r=>latlon(r.coord)).length],
-   ['Tempo total (min)',regs.reduce((t,r)=>t+(+r.duracao||0),0)]];
+   ['Tempo total (min)',regs.reduce((t,r)=>t+(+r.duracao||0),0)],['Contatos DX',dxs.length],
+   ['Países DX',new Set(dxs.map(r=>r.dxPais).filter(Boolean)).size],['Maior DX (km)',dxd.length?(+dxd[0].dxDist).toLocaleString('pt-BR',{maximumFractionDigits:0}):0]];
   $('stats').innerHTML=s.map(([k,v])=>`<div class="stat"><b>${v}</b>${k}</div>`).join('');
   $('gBanda').innerHTML=barras(conta(regs,r=>r.banda));$('gRadio').innerHTML=barras(conta(regs,r=>r.radio));
   $('gHora').innerHTML=barras(conta(regs,r=>{const h=new Date(r.data).getHours();return h<6?'Madrugada (0–6h)':h<12?'Manhã (6–12h)':h<18?'Tarde (12–18h)':'Noite (18–24h)'}));
+  $('topDX').innerHTML=dxd.slice(0,10).map((r,i)=>`<div class="item ${r.banda}"><b>${i+1}º</b> <span class="link" onclick="detalhe(${r.id})"><b>${esc(r.dxIndic)||'-'}</b></span> · ${esc([r.dxCidade,r.dxPais].filter(Boolean).join(', '))}
+    <span class="tag dx">📏 ${(+r.dxDist).toLocaleString('pt-BR',{maximumFractionDigits:0})} km</span><br><small>${(+r.freq).toFixed(4)} MHz · ${r.banda} · ${esc(r.modo)} · ${fmt(r.data)}</small></div>`).join('')||'<small>Nenhum DX com distância registrada</small>';
   $('topF').innerHTML=Object.entries(freqs).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([f,n])=>{
     const l=regs.filter(r=>r.freq===f).sort((a,b)=>a.data<b.data?-1:1);
     return`<div class="item ${banda(f)}"><span class="freq link" onclick="detalhe(${l.at(-1).id})">${(+f).toFixed(4)} MHz</span> <span class="tag">${n}x</span>
      <br><small>Primeira: ${fmt(l[0].data)} · Última: ${fmt(l.at(-1).data)} · Indicativos: ${esc([...new Set(l.map(r=>r.indic).filter(Boolean))].join(', '))||'-'}</small></div>`}).join('')||'<small>Sem dados</small>';
   const ord=[...regs].sort((a,b)=>a.data<b.data?1:-1),g={};ord.forEach(r=>(g[r.data.slice(0,10)]??=[]).push(r));
   $('timeline').innerHTML='<div class="dia">'+Object.entries(g).map(([d,l])=>`<h4>${new Date(d+'T12:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})} (${l.length})</h4>`+
-    l.map(r=>`<div class="link" onclick="detalhe(${r.id})">🕒 ${r.data.slice(11,16)} — <b>${(+r.freq).toFixed(4)}</b> ${r.banda} · ${esc(r.sinal)} · ${esc(r.radio)||'-'} ${r.indic?'· '+esc(r.indic):''}</div>`).join('')).join('')+'</div>';
+    l.map(r=>`<div class="link" onclick="detalhe(${r.id})">🕒 ${r.data.slice(11,16)} — <b>${(+r.freq).toFixed(4)}</b> ${r.banda} · ${esc(r.sinal)} · ${esc(r.radio)||'-'} ${r.indic?'· '+esc(r.indic):''}${r.dx?' · 🌍 '+esc(r.dxIndic):''}</div>`).join('')).join('')+'</div>';
 }
 
 /* TEMAS */
@@ -353,7 +439,7 @@ function szNome(e){if(e.id.startsWith('n_'))return'Adicionar em '+cadNomes[e.id.
   return(p.querySelector('label')?.textContent||e.placeholder||e.id).replace(/:.*$/,'');}
 function szLista(){const v=$('szSel').value;
   $('szSel').innerHTML=[...document.querySelectorAll('nav button')].map(b=>{
-    const els=[...$(b.dataset.t).querySelectorAll('input[id],select[id],textarea[id]')].filter(e=>!e.id.startsWith('sz')&&!['file','range','color','hidden'].includes(e.type));
+    const els=[...$(b.dataset.t).querySelectorAll('input[id],select[id],textarea[id]')].filter(e=>!e.id.startsWith('sz')&&!['file','range','color','hidden','checkbox'].includes(e.type));
     return els.length?`<optgroup label="${esc(b.textContent)}">${els.map(e=>`<option value="${e.id}">${esc(szNome(e))}</option>`).join('')}</optgroup>`:''}).join('');
   if(v)$('szSel').value=v;szLoad();}
 function szLoad(){const id=$('szSel').value,s=cfg.sz[id]||{};
@@ -384,7 +470,7 @@ function bkAviso(){const t=+localStorage.getItem(BKEY)||0,d=Math.floor((Date.now
 
 /* CADASTROS */
 const cadNomes={radio:'📻 Rádios',antena:'📡 Antenas',tipo:'🏷️ Tipos de transmissão',local:'📍 Locais',ceu:'☁️ Céu',chuva:'🌧️ Chuva',vento:'💨 Vento',visib:'🌫️ Visibilidade'};
-const cadDef={radio:['Baofeng UV-5R'],antena:['Original','Nagoya','J-Pole'],tipo:['Radioamador','Repetidora','Aviação','Marítimo','Serviço público','Desconhecido'],local:[],
+const cadDef={radio:['Baofeng UV-5R'],antena:['Original','Nagoya','J-Pole','Dipolo','Vertical 1/4 onda'],tipo:['Radioamador','Repetidora','PX (Faixa do Cidadão)','Aviação','Marítimo','Serviço público','Desconhecido'],local:[],
   ceu:['Limpo','Poucas nuvens','Parcialmente nublado','Nublado','Encoberto'],
   chuva:['Sem chuva','Garoa','Chuva fraca','Chuva moderada','Chuva forte','Tempestade/trovoada','Granizo'],
   vento:['Calmo','Fraco','Moderado','Forte','Rajadas'],visib:['Boa','Névoa seca','Neblina','Nevoeiro denso']};
@@ -436,8 +522,6 @@ function propUsar(){if(!pUlt)propCalc();$('temp').value=$('pT').value;$('umid').
   $('prop').value=`${pUlt.s}/100 ${pUlt.c}`;irPara('reg');}
 
 /* ORIGEM DOS DADOS */
-const haver=(a,b)=>{const r=Math.PI/180,dLa=(b[0]-a[0])*r,dLo=(b[1]-a[1])*r,
-  x=Math.sin(dLa/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)**2;return 2*6371*Math.asin(Math.sqrt(x))};
 async function ondeFica(p){try{
   const j=await(await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${p[0]}&lon=${p[1]}&zoom=10&accept-language=pt-BR`)).json(),a=j.address||{};
   return{cidade:a.city||a.town||a.village||a.municipality||a.county||'-',sub:a.state_district||'',regiao:a.region||'',estado:a.state||'-',pais:a.country||'-'};
@@ -478,7 +562,7 @@ async function propAuto(){
   }catch(e){$('pStat').textContent='❌ Falha ao buscar ('+(e.message||'sem internet?')+'). Preencha manualmente.';}}
 
 /* CLIMA AUTOMÁTICO */
-$('local').onchange=()=>{const r=regs.find(x=>x.local===$('local').value&&x.coord);if(r)$('coord').value=r.coord;};
+$('local').onchange=()=>{const r=regs.find(x=>x.local===$('local').value&&x.coord);if(r){$('coord').value=r.coord;dxCalc();}};
 async function climaAuto(){const p=latlon($('coord').value)||[-30.03,-51.23];$('cStat').textContent='Buscando...';
   try{const c=(await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p[0]}&longitude=${p[1]}&current=temperature_2m,relative_humidity_2m,surface_pressure,cloud_cover,precipitation,weather_code,wind_speed_10m,visibility`)).json()).current;
     const f=(v,l,n)=>n[l.filter(x=>v>=x).length],wc=c.weather_code;
@@ -522,7 +606,8 @@ const INFO=[
   ['Câmbio','Terminei de falar, sua vez'],['Câmbio final','Fim da comunicação'],['Positivo / Negativo','Sim / Não'],
   ['Copiado / Cópia','Mensagem recebida e entendida'],['Modulação','A voz ou o sinal transmitido'],['Prefixo / Indicativo','Identificação oficial da estação (ex: PY3XXX)'],
   ['Break / Breque','Pedido para entrar na conversa'],['Roger','Recebido (uso aeronáutico ou internacional)'],['YL / XYL','Operadora / esposa do operador'],
-  ['OM','Colega operador (old man)'],['HI HI','Risada (vem do Morse)'],['Portadora','Sinal sem modulação / tecla presa'],['Pirata','Estação sem licença']]],
+  ['OM','Colega operador (old man)'],['HI HI','Risada (vem do Morse)'],['Portadora','Sinal sem modulação / tecla presa'],['Pirata','Estação sem licença'],
+  ['Locator / Grid','Quadrícula Maidenhead que indica a posição (ex: GG40 = Serra Gaúcha)']]],
  ['📶 Escala RST (sinal)',[
   ['R 1–5','Legibilidade: 1 ilegível · 3 legível com dificuldade · 5 perfeita'],
   ['S 1–9','Força: 1 muito fraco · 5 razoável · 9 muito forte'],['T 1–9','Tom (só em CW/telegrafia): 9 = tom puro']]],
@@ -534,6 +619,8 @@ const INFO=[
   ['PY1 / PP1','RJ / ES'],['PY2','SP'],['PY3','RS'],['PY4','MG'],['PY5','PR / SC'],['PY6','BA / SE'],['PY7','PE, AL, PB, RN, CE, PI'],
   ['PY8','PA, AM, AP, MA, RR'],['PY9','MT, MS, GO, DF, TO, RO, AC'],['PU / PT','Variações de classe ou região'],['ZV, ZW, ZZ…','Prefixos especiais ou comemorativos']]],
  ['📻 Faixas e informações úteis',[
+  ['HF','3–30 MHz: 80 m (3,5), 40 m (7), 20 m (14), 15 m (21), 10 m (28 MHz). DX pela ionosfera'],
+  ['PX (11 m)','26,965–27,405 MHz, 40 canais (AM/SSB) · Canal 9 = emergência · Canal 19 = estradas'],
   ['2 m (VHF)','144–148 MHz (radioamador)'],['70 cm (UHF)','430–440 MHz (radioamador)'],['Aviação (VHF)','118–137 MHz, modo AM'],
   ['Marítimo (VHF)','156–162 MHz · Canal 16 (156,800) = socorro e chamada'],['Repetidora','Recebe em uma frequência e retransmite em outra (shift ±600 kHz em VHF, ±5 MHz em UHF)'],
   ['CTCSS / DCS','Tons subaudíveis para abrir a repetidora ou o squelch'],['Squelch','Silencia o ruído quando não há sinal'],
@@ -543,7 +630,7 @@ function renderInfo(){const q=$('buscaInfo').value.toLowerCase();
   $('infoC').innerHTML=INFO.map(([t,l])=>{const f=l.filter(([a,b])=>(a+' '+b+' '+t).toLowerCase().includes(q));
     return f.length?`<div class="card"><h3>${t}</h3><table>${f.map(([a,b])=>`<tr><td><b>${a}</b></td><td>${b}</td></tr>`).join('')}</table></div>`:''}).join('')||'<p class="muted">Nada encontrado.</p>';}
 
-/* ===== v2.0: PERFIL E SENHA LOCAIS ===== */
+/* ===== PERFIL E SENHA LOCAIS ===== */
 let perfil=JSON.parse(localStorage.getItem(PKEY)||'null');
 const aMsg=t=>$('aMsg').textContent=t;
 async function hash(s,salt){const d=new TextEncoder().encode(salt+':'+s);
@@ -553,7 +640,7 @@ const TERMOS=`<div class="termos"><b>Termos de uso e privacidade</b><br>
 • Todos os dados ficam <b>somente neste aparelho</b>. Não existe servidor nem conta online.<br>
 • Você é responsável pelos seus backups. Limpar os dados do navegador ou trocar de aparelho apaga tudo.<br>
 • A senha só protege o acesso pela tela do app. Ela não pode ser recuperada, e esquecer a senha apaga os dados.<br>
-• As buscas de clima e endereço enviam somente as coordenadas para o Open-Meteo e o OpenStreetMap.<br>
+• As buscas enviam somente coordenadas, cidades e indicativos para Open-Meteo, OpenStreetMap, HamDB e Callook.<br>
 • Ouvir é permitido, mas não divulgue o conteúdo de comunicações privadas ou de serviços públicos (Lei 9.472/97).<br>
 • O app é fornecido "como está", sem garantias.</div>`;
 function telaAuth(){aMsg('');
@@ -587,7 +674,7 @@ function minhaConta(){const t=+localStorage.getItem(BKEY)||0;
    <tr><td>Nome</td><td>${esc(perfil.nome)}</td></tr>
    <tr><td>Indicativo</td><td>${esc(perfil.indic)||'-'}</td></tr>
    <tr><td>Perfil criado em</td><td>${fmt(perfil.criado)}</td></tr>
-   <tr><td>Registros</td><td>${regs.length}</td></tr>
+   <tr><td>Registros</td><td>${regs.length} (${regs.filter(r=>r.dx).length} DX)</td></tr>
    <tr><td>Último backup</td><td>${t?fmt(t):'⚠️ Nunca'}</td></tr>
    <tr><td>Armazenamento</td><td>📱 Somente neste aparelho</td></tr>
    <tr><td>Versão</td><td>${VERSAO}</td></tr></table>
