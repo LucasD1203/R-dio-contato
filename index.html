@@ -50,7 +50,6 @@ small,.muted{color:var(--muted)}
 table{width:100%;border-collapse:collapse}td{padding:4px;border-bottom:1px solid var(--border);vertical-align:top}td:first-child{color:var(--muted);width:35%}
 .hbar{font-size:.55em;font-weight:normal;margin-top:4px}.hbar button{padding:3px 10px;font-size:1em}
 .termos{max-height:140px;overflow:auto;font-size:.8em;background:var(--input);padding:8px;border-radius:6px;border:1px solid var(--border)}
-#dxBox{display:none}
 .dxHead{grid-column:1/-1;border-top:1px solid #ef4444;padding-top:8px}
 /* Windows XP */
 body[data-theme=xp] header,body[data-theme=xp] .card>h3{background:linear-gradient(#0997ff,#0053ee 8%,#0050ee 40%,#06f 88%,#005bff 95%,#003dd7);color:#fff;text-shadow:1px 1px #0f1089}
@@ -113,7 +112,7 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
       <div class="dxHead"><b>🌍 Estação DX</b> <small id="dxStat"></small></div>
       <div><label>Indicativo da estação DX</label><div class="row"><input id="dxIndic" placeholder="W1AW, LU1ABC, PY2XX" onkeydown="if(event.key==='Enter')buscaIndic()"><button onclick="buscaIndic()">🔎</button></div></div>
       <div><label>Nome do operador</label><input id="dxNome"></div>
-      <div><label>Cidade / Estado</label><div class="row"><input id="dxCidade" placeholder="Digite e clique 🔎 p/ localizar"><button onclick="geoCidade()">📌</button></div></div>
+      <div><label>Cidade / Estado</label><div class="row"><input id="dxCidade" placeholder="Digite e clique 📌 p/ localizar"><button onclick="geoCidade()">📌</button></div></div>
       <div><label>País</label><input id="dxPais"></div>
       <div><label>Locator (grid)</label><input id="dxGrid" placeholder="GG40" oninput="dxGridSet()"></div>
       <div><label>Coordenadas DX (lat, lon)</label><input id="dxCoord" oninput="dxCalc()"></div>
@@ -169,6 +168,26 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
 </section>
 
 <section class="tab" id="prop">
+  <div class="card"><h3>📡 Propagação HF / PX (ionosfera)</h3>
+    <div class="grid">
+      <div><label>Frequência (MHz)</label><input type="number" step="any" id="ioF" value="27.065"></div>
+      <div><label>Modo</label><select id="ioM">
+        <option value="0">SSB / USB / LSB</option><option value="-6">AM</option><option value="-10">FM</option>
+        <option value="13">CW</option><option value="26">FT8 / digital fraco</option></select></div>
+      <div><label>Potência (W)</label><input type="number" id="ioP" value="4" min="0.1" step="any"></div>
+      <div><label>Antena</label><select id="ioA">
+        <option value="-6">Móvel / curta (−6 dBi)</option><option value="0" selected>Vertical 1/4 onda (0 dBi)</option>
+        <option value="2">Dipolo (2 dBi)</option><option value="7">Yagi 3 elementos (7 dBi)</option><option value="10">Direcional 5+ el. (10 dBi)</option></select></div>
+      <div><label>Fluxo solar SFI (auto)</label><input type="number" id="ioSFI" placeholder="ex: 150"></div>
+      <div><label>Índice Kp (auto)</label><input type="number" step="any" id="ioKp" placeholder="0 a 9"></div>
+    </div>
+    <button class="pri" onclick="ioAuto()">🛰️ Buscar dados e analisar</button>
+    <button onclick="ioDoForm()">📝 Usar freq./modo do registro</button><button onclick="ioCalc()">🧮 Recalcular</button>
+    <small id="ioStat"></small>
+    <div id="ioOrig"></div><div id="ioRes"></div>
+    <div id="ioMapa" style="height:380px;border-radius:var(--radius);margin-top:10px;display:none"></div>
+    <div id="ioBandas"></div><div id="ioPrev"></div>
+  </div>
   <div class="card"><h3>🌤️ Condição de propagação (VHF/UHF)</h3>
     <div class="grid"><div><label>Modelo meteorológico</label><select id="pModelo">
       <option value="best_match">Automático (melhor disponível)</option>
@@ -181,16 +200,16 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
     <button onclick="propCalc()">🧮 Calcular</button><button onclick="propUsar()">📝 Usar no registro</button>
     <div id="pRes"></div>
   </div>
-  <div class="card"><h3>📈 Próximas 24h</h3><div id="pPrev"><small>Use a busca automática.</small></div></div>
+  <div class="card"><h3>📈 Próximas 24h (VHF/UHF)</h3><div id="pPrev"><small>Use a busca automática.</small></div></div>
   <div class="card"><h3>ℹ️ Como é avaliado</h3><table>
     <tr><td><b>N (refratividade)</b></td><td>N = 77,6/T · (P + 4810·e/T), conforme ITU-R P.453. T em kelvin, P = pressão, e = pressão do vapor d'água</td></tr>
     <tr><td><b>dN/dh</b></td><td>Variação de N por km de altura. Normal ≈ −40 · Super-refração &lt; −79 · Duto &lt; −157</td></tr>
     <tr><td><b>Fator k</b></td><td>"Raio efetivo da Terra". Normal = 1,33. Quanto maior, mais longe o sinal vai</td></tr>
     <tr><td><b>Inversão térmica</b></td><td>Ar mais quente em altitude: favorece o tropo (+10 pontos)</td></tr>
     <tr><td><b>Sem dados de altitude</b></td><td>O gradiente é estimado pela fórmula de Bean-Dutton (ΔN = −7,32·e^(0,005577·N)), que é menos precisa</td></tr>
-    <tr><td><b>HF / PX</b></td><td>Esta avaliação vale para VHF/UHF (troposfera). HF e PX dependem da ionosfera (ciclo solar, hora do dia)</td></tr>
-    <tr><td><b>Fonte dos dados</b></td><td>Open-Meteo (modelos numéricos em grade, não estações físicas). Endereço por OpenStreetMap/Nominatim</td></tr>
-    <tr><td><b>Dicas</b></td><td>Fica melhor com alta pressão estável, no amanhecer ou entardecer e com neblina. Frentes frias e vento forte pioram</td></tr>
+    <tr><td><b>HF / PX</b></td><td>Dependem da ionosfera: foF2 (modelo calibrado por ionossondas GIRO), MUF = foF2/cos(ângulo), LUF (absorção da camada D), SFI e Kp da NOAA, margem de potência/modo/antena em dB</td></tr>
+    <tr><td><b>Fonte dos dados</b></td><td>Open-Meteo, NOAA SWPC, GIRO/KC2G. Endereço por OpenStreetMap/Nominatim</td></tr>
+    <tr><td><b>Dicas</b></td><td>VHF/UHF: alta pressão estável, amanhecer/entardecer e neblina ajudam. HF/PX: ciclo solar alto, Kp baixo e horário diurno favorecem bandas altas</td></tr>
   </table></div>
 </section>
 
@@ -225,7 +244,7 @@ body[data-theme=vista] button.pri,body[data-theme=vista] nav button.on{backgroun
 
 <script>
 const $=id=>document.getElementById(id);
-const KEY='logRadio',TKEY='logRadioTema',CKEY='logRadioCad',PKEY='logRadioPerfil',BKEY='logRadioBackup',VERSAO='2.1';
+const KEY='logRadio',TKEY='logRadioTema',CKEY='logRadioCad',PKEY='logRadioPerfil',BKEY='logRadioBackup',VERSAO='2.2';
 const campos=['data','freq','radio','antena','modo','tom','sinal','duracao','indic','tipo','local','coord','dx','dxIndic','dxNome','dxCidade','dxPais','dxGrid','dxCoord','dxDist','ceu','chuva','vento','visib','temp','umid','pressao','prop','clima','obs'];
 const nomes={data:'Data/Hora',freq:'Frequência',banda:'Banda',radio:'Rádio',antena:'Antena',modo:'Modo',tom:'Tom',sinal:'Sinal',duracao:'Duração (min)',indic:'Indicativo',tipo:'Tipo',local:'Local',coord:'Minhas coordenadas',
  dx:'Contato',dxIndic:'Indicativo DX',dxNome:'Operador DX',dxCidade:'Cidade DX',dxPais:'País DX',dxGrid:'Locator DX',dxCoord:'Coordenadas DX',dxDist:'Distância (km)',
@@ -237,7 +256,8 @@ regs.forEach(r=>{if(!r.coord&&/-?\d+\.\d+\s*,\s*-?\d+\.\d+/.test(r.local||''))r.
 $('nav').onclick=e=>{const t=e.target.dataset.t;if(!t)return;
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
   document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('on',s.id===t));
-  if(t==='mapaT')initMapa();if(t==='hist')historico();if(t==='cad')renderCad();};
+  if(t==='mapaT')initMapa();if(t==='hist')historico();if(t==='cad')renderCad();
+  if(t==='prop'&&ioMap)setTimeout(()=>ioMap.invalidateSize(),100);};
 const irPara=t=>document.querySelector(`nav [data-t=${t}]`).click();
 
 /* REGISTRO */
@@ -497,7 +517,7 @@ function renderCad(){$('cadC').innerHTML=Object.entries(cadNomes).map(([k,t])=>`
   <td style="text-align:right;white-space:nowrap"><button onclick="moveCad('${k}',${i},-1)">▲</button><button onclick="moveCad('${k}',${i},1)">▼</button>
   <button onclick="renCad('${k}',${i})">✏️</button><button class="del" onclick="delCad('${k}',${i})">🗑️</button></td></tr>`).join('')}</table></div>`).join('');}
 
-/* PROPAGAÇÃO */
+/* PROPAGAÇÃO VHF/UHF */
 const pc=[['pT','Temperatura (°C)',25],['pU','Umidade relativa (%)',70],['pP','Pressão no local (hPa)',1013],['pH','Altitude do local (m)',10],
  ['pT2','Temp. em altitude (°C) – opcional',''],['pU2','Umidade em altitude (%) – opcional',''],['pP2','Pressão da camada (hPa)',925],['pH2','Altura da camada (m) – opcional','']];
 $('pCampos').innerHTML=pc.map(([i,n,v])=>`<div><label>${n}</label><input type="number" step="any" id="${i}" value="${v}"></div>`).join('');
@@ -521,7 +541,6 @@ function propCalc(){const r=pUlt=avaliar(nv('pT'),nv('pU'),nv('pP'),nv('pH')||0,
 function propUsar(){if(!pUlt)propCalc();$('temp').value=$('pT').value;$('umid').value=$('pU').value;$('pressao').value=$('pP').value;
   $('prop').value=`${pUlt.s}/100 ${pUlt.c}`;irPara('reg');}
 
-/* ORIGEM DOS DADOS */
 async function ondeFica(p){try{
   const j=await(await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${p[0]}&lon=${p[1]}&zoom=10&accept-language=pt-BR`)).json(),a=j.address||{};
   return{cidade:a.city||a.town||a.village||a.municipality||a.county||'-',sub:a.state_district||'',regiao:a.region||'',estado:a.state||'-',pais:a.country||'-'};
@@ -530,7 +549,7 @@ async function ondeFica(p){try{
 async function propAuto(){
   let p=latlon($('coord').value),orig='📝 Coordenadas do formulário de registro';
   if(!p){p=await new Promise(ok=>navigator.geolocation?navigator.geolocation.getCurrentPosition(g=>ok([g.coords.latitude,g.coords.longitude]),()=>ok(null),{timeout:8000}):ok(null));orig='📍 GPS do aparelho';}
-  if(!p){p=[-30.03,-51.23];orig='⚠️ Padrão (Porto Alegre), GPS indisponível';}
+  if(!p){p=[-29.17,-51.18];orig='⚠️ Padrão (Caxias do Sul), GPS indisponível';}
   const mod=$('pModelo'),modNome=mod.options[mod.selectedIndex].text;
   $('pStat').textContent='Buscando...';$('pOrig').innerHTML='';
   try{const v='temperature_2m,relative_humidity_2m,surface_pressure,temperature_925hPa,relative_humidity_925hPa,geopotential_height_925hPa';
@@ -561,9 +580,132 @@ async function propAuto(){
       return`<div class="bar"><div style="width:${Math.max(12,r.s)}%;background:${r.cor}">${t.slice(11,16)} · ${r.s} ${r.c}${r.inv?' 🔥':''}</div></div>`}).join('');
   }catch(e){$('pStat').textContent='❌ Falha ao buscar ('+(e.message||'sem internet?')+'). Preencha manualmente.';}}
 
+/* PROPAGAÇÃO HF / PX */
+const RT=6371,RD=Math.PI/180;let io={},ioMap,ioLay;
+const jget=async u=>{const r=await fetch(u);if(!r.ok)throw 0;return r.json()};
+const tP=t=>{t=String(t).replace(' ','T');return new Date(/Z|[+-]\d\d:?\d\d$/.test(t)?t:t+'Z')};
+function cosZen(la,lo,d){const N=(d-Date.UTC(d.getUTCFullYear(),0,0))/864e5,
+  dec=23.44*Math.sin(2*Math.PI*(284+N)/365)*RD,H=(d.getUTCHours()+d.getUTCMinutes()/60+lo/15-12)*15*RD;
+  return Math.sin(la*RD)*Math.sin(dec)+Math.cos(la*RD)*Math.cos(dec)*Math.cos(H);}
+const ssnDe=F=>Math.max(0,(-0.728+Math.sqrt(0.53+0.00356*Math.max(0,F-63.7)))/0.00178);
+const foMod=(la,lo,d,R)=>3+.012*R+(4+.035*R)*Math.sqrt(Math.max(0,cosZen(la,lo,d)));
+const lufMod=(la,lo,d,R,P,kp)=>Math.max(1.5,(1+(2.5+.015*R)*Math.max(0,cosZen(la,lo,d))**.7)*(100/P)**.1*(kp>4?1+.1*(kp-4):1));
+const ioSp=h=>RT*Math.cos(3*RD)/(RT+h);
+const ioMufMax=(fo,h)=>fo/Math.sqrt(1-ioSp(h)**2);
+const ioHop=h=>2*RT*(Math.PI/2-3*RD-Math.asin(ioSp(h)));
+function ioSkip(f,fo,h){if(f<=fo)return 0;const sp=Math.sqrt(1-(fo/f)**2),cb=sp*(RT+h)/RT;if(cb>=1)return null;
+  return 2*RT*(Math.PI/2-Math.acos(cb)-Math.asin(sp));}
+function esProb(la,lo,d){const sz=[1,.7,.35,.15,.05,.1,.25,.3,.2,.3,.6,.9],m=d.getUTCMonth(),s=sz[la<0?m:(m+6)%12];
+  const h=((d.getUTCHours()+d.getUTCMinutes()/60+lo/15)%24+24)%24;
+  return Math.round(70*s*Math.max(Math.exp(-(((h-10.5)/2.5)**2)),.8*Math.exp(-(((h-19)/2)**2))));}
+function ioScore(f,mm,luf,mg,kp,qrn){if(f>mm)return 0;
+  let s=f<luf?20*f/luf:100-Math.abs(f/mm-.85)*120;
+  s+=Math.max(-25,Math.min(15,mg))-(kp>3?(kp-3)*8:0)-qrn*(f<10?1:.4);
+  return Math.round(Math.max(0,Math.min(100,s)));}
+const ioLbl=s=>s<1?['Fechada','#ef4444']:s<25?['Ruim','#f97316']:s<45?['Fraca','#eab308']:s<70?['Boa','#22c55e']:['Excelente','#a855f7'];
+const km=v=>Math.round(v).toLocaleString('pt-BR')+' km';
+
+function ioDoForm(){const f=$('freq').value;if(f)$('ioF').value=f;
+  const m={AM:-6,FM:-10,NFM:-10,CW:13,FT8:26}[$('modo').value];$('ioM').value=m??0;ioCalc();}
+
+async function ioAuto(){
+  let p=latlon($('coord').value),orig='📝 Coordenadas do formulário de registro';
+  if(!p){p=await new Promise(ok=>navigator.geolocation?navigator.geolocation.getCurrentPosition(g=>ok([g.coords.latitude,g.coords.longitude]),()=>ok(null),{timeout:8000}):ok(null));orig='📍 GPS do aparelho';}
+  if(!p){p=[-29.17,-51.18];orig='⚠️ Padrão (Caxias do Sul), GPS indisponível';}
+  $('ioStat').textContent='⏳ Buscando dados solares, ionossondas e clima...';
+  const[a,b,c,w]=await Promise.allSettled([
+    jget('https://services.swpc.noaa.gov/json/f107_cm_flux.json'),
+    jget('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json'),
+    jget('https://prop.kc2g.com/api/stations.json'),
+    jget(`https://api.open-meteo.com/v1/forecast?latitude=${p[0]}&longitude=${p[1]}&current=weather_code&hourly=cape&forecast_hours=1`)]);
+  io={p,orig,fontes:[],sts:[]};
+  if(a.status==='fulfilled'){const l=a.value.filter(x=>x.flux).sort((x,y)=>x.time_tag<y.time_tag?-1:1).at(-1);
+    if(l){$('ioSFI').value=Math.round(l.flux);io.fontes.push(`☀️ Fluxo solar: NOAA SWPC (${String(l.time_tag).slice(0,16).replace('T',' ')} UTC)`);}}
+  else io.fontes.push('⚠️ Fluxo solar indisponível, usando o valor do campo (ou 120)');
+  if(b.status==='fulfilled'){const l=b.value.at(-1),k=Array.isArray(l)?+l[1]:+(l.Kp??l.kp_index??l.kp);
+    if(!isNaN(k)){$('ioKp').value=k;io.fontes.push(`🧲 Kp: NOAA SWPC (${String(Array.isArray(l)?l[0]:l.time_tag).slice(0,16).replace('T',' ')} UTC)`);}}
+  else io.fontes.push('⚠️ Kp indisponível, usando o valor do campo (ou 2)');
+  if(c.status==='fulfilled'){const now=Date.now();
+    io.sts=c.value.filter(s=>s.fof2&&s.station&&now-tP(s.time)<3*36e5&&!(s.cs>=0&&s.cs<20)).map(s=>{
+      const la=+s.station.latitude,l0=+s.station.longitude,lo=l0>180?l0-360:l0;
+      return{nome:s.station.name,cod:s.station.code,la,lo,fo:+s.fof2,h:+s.hmf2||300,muf:+s.mufd||null,t:tP(s.time),d:haver(p,[la,lo])}})
+      .sort((x,y)=>x.d-y.d).slice(0,3);
+    if(io.sts.length)io.fontes.push('📡 Ionossondas: rede GIRO via prop.kc2g.com');}
+  if(!io.sts.length)io.fontes.push('⚠️ Sem ionossondas recentes: o foF2 vem só do modelo (menos preciso)');
+  if(w.status==='fulfilled'){io.wc=w.value.current?.weather_code;io.cape=w.value.hourly?.cape?.[0];io.fontes.push('⛈️ Clima local (QRN): Open-Meteo');}
+  $('ioStat').textContent='✅ '+new Date().toLocaleTimeString('pt-BR');ioCalc();}
+
+function ioCalc(){
+  const p=io.p||latlon($('coord').value)||[-29.17,-51.18],d=new Date(),f=+$('ioF').value;if(!f)return alert('Informe a frequência');
+  const mg0=+$('ioM').value,P=Math.max(.1,+$('ioP').value||4),ant=+$('ioA').value,
+    sfi=+$('ioSFI').value||120,kp=$('ioKp').value===''?2:+$('ioKp').value,R=ssnDe(sfi),sts=io.sts||[];
+  let k=1,h=300;
+  if(sts.length){let sw=0,sk=0,sh=0;sts.forEach(s=>{const w=1/Math.max(50,s.d);sw+=w;sk+=w*s.fo/foMod(s.la,s.lo,d,R);sh+=w*s.h;});
+    k=Math.min(2,Math.max(.5,sk/sw));h=sh/sw;}
+  const kpF=kp>4?1-.06*(kp-4):1,foAt=t=>k*foMod(p[0],p[1],t,R)*kpF;
+  const qrn=io.wc>=95?20:(io.cape||0)>1500?10:(io.cape||0)>500?4:0,mg=10*Math.log10(P/100)+mg0+ant;
+  const an=(ff,t)=>{const fo=foAt(t),mm=ioMufMax(fo,h),luf=lufMod(p[0],p[1],t,R,P,kp);return{fo,mm,luf,s:ioScore(ff,mm,luf,mg,kp,qrn),sk:ioSkip(ff,fo,h)}};
+  const A=an(f,d),hop=ioHop(h),es=esProb(p[0],p[1],d),[lb,cr]=ioLbl(A.s);
+  const hops=mg<-30?0:Math.max(1,Math.min(6,1+Math.floor((mg+12)/6))),alc=A.s>0?hops*hop:0;
+  const gw=60/Math.sqrt(f)*P**.25*10**((mg0+ant)/40),esOk=f>=20&&es>=25;
+  const bd=f>=26.965&&f<=27.405?'PX (11 m)':f<30?'HF':'VHF+ (use a análise VHF/UHF abaixo)';
+  const kpT=kp<3?'🟢 Calmo':kp<5?'🟡 Instável':'🔴 Tempestade geomagnética';
+  const prev=[...Array(24)].map((_,i)=>{const t=new Date(+d+i*36e5);return{t,...an(f,t),es:esProb(p[0],p[1],t)}});
+  const best=prev.filter(x=>x.s>=45).map(x=>x.t.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+  const nt=[];
+  nt.push(`☀️ SFI ${sfi} ≈ ${Math.round(R)} manchas solares: ciclo ${R>100?'alto, bandas altas (15–10 m e PX) abrem bem':R>50?'moderado':'baixo, prefira 40–20 m'}.`);
+  nt.push(`🧲 Kp ${kp}: ${kpT}${kp>=5?'. A ionosfera fica degradada e há mais absorção, principalmente nas rotas polares':''}.`);
+  if(f>A.mm)nt.push(`⛔ ${f} MHz está acima da MUF máxima (${A.mm.toFixed(1)} MHz), então não há reflexão na camada F2.${f>=20?` Resta a <b>Es (E esporádica)</b>, com chance estimada de ${es}% agora e saltos de 700–2.200 km.`:''}`);
+  else if(f<A.luf)nt.push(`⚠️ ${f} MHz está abaixo da LUF (${A.luf.toFixed(1)} MHz): a camada D absorve o sinal. Tente à noite ou use mais potência.`);
+  else nt.push(`✅ A frequência está entre a LUF (${A.luf.toFixed(1)}) e a MUF (${A.mm.toFixed(1)} MHz). A frequência ideal (FOT) é ${(A.mm*.85).toFixed(1)} MHz.`);
+  if(A.sk===0&&A.s>0)nt.push('📍 A frequência está abaixo do foF2 e funciona em NVIS: sem zona de silêncio, bom para 0–400 km.');
+  else if(A.sk)nt.push(`🔇 Zona de silêncio: de ${km(gw)} até ${km(A.sk)}. Estações nessa faixa <b>não</b> serão ouvidas.`);
+  nt.push(`🔋 ${P} W + modo (${mg0>=0?'+':''}${mg0} dB) + antena (${ant} dBi) dão uma margem de ${mg.toFixed(0)} dB em relação a 100 W SSB com dipolo, o que equivale a cerca de ${hops} salto(s).`);
+  if(qrn)nt.push(`⛈️ Há instabilidade ou trovoada no seu local: o QRN (estática) aumenta, ainda mais abaixo de 10 MHz.`);
+  if(best.length)nt.push(`🕒 Melhores horários nas próximas 24h para ${f} MHz: ${best.slice(0,8).join(', ')}${best.length>8?'…':''}.`);
+  else nt.push('🕒 A previsão não mostra abertura boa por F2 nas próximas 24h para esta frequência.');
+
+  $('ioOrig').innerHTML=`<h4>📍 Origem dos dados</h4><table>
+   <tr><td>Sua posição</td><td>${io.orig||'Formulário/padrão'} · ${p[0].toFixed(3)}, ${p[1].toFixed(3)}</td></tr>
+   ${sts.map(s=>`<tr><td>Ionossonda ${esc(s.cod)}</td><td>${esc(s.nome)} · ${km(s.d)} · foF2 ${s.fo} MHz${s.muf?' · MUF '+s.muf:''} · ${s.t.toLocaleString('pt-BR')}</td></tr>`).join('')}
+   <tr><td>Fontes</td><td>${(io.fontes||['Valores manuais']).join('<br>')}</td></tr>
+   <tr><td>Calibração</td><td>${sts.length?`O modelo foi ajustado por um fator de ${k.toFixed(2)}, conforme as ionossondas mais próximas (ponderado pela distância)`:'Sem calibração (só modelo)'}</td></tr></table>`;
+  $('ioRes').innerHTML=`<div class="stat" style="margin-top:10px"><b style="color:${cr}">${A.s}/100</b>${lb} · ${f} MHz · ${bd}${esOk&&A.s<45?` · 🌩️ Es possível (${es}%)`:''}</div>
+   <div class="bar"><div style="width:${Math.max(5,A.s)}%;background:${cr}">&nbsp;</div></div>
+   <table>
+   <tr><td>foF2 estimado no seu local</td><td>${A.fo.toFixed(2)} MHz (camada F2 a ~${Math.round(h)} km)</td></tr>
+   <tr><td>MUF 3000 km / MUF máx. (1 salto)</td><td>${(A.fo*3).toFixed(1)} / ${A.mm.toFixed(1)} MHz</td></tr>
+   <tr><td>LUF (absorção)</td><td>${A.luf.toFixed(1)} MHz</td></tr>
+   <tr><td>📶 Onda terrestre (local)</td><td>~${km(gw)}</td></tr>
+   <tr><td>🔇 Zona de silêncio</td><td>${A.s===0?'—':A.sk===0?'Nenhuma (NVIS)':km(gw)+' a '+km(A.sk)}</td></tr>
+   <tr><td>↗️ 1 salto ionosférico</td><td>${A.s?km(A.sk||0)+' a '+km(hop):'Fechado'}</td></tr>
+   <tr><td>🌍 Alcance DX estimado</td><td><b>${A.s?'até ~'+km(alc)+' ('+hops+' salto'+(hops>1?'s':'')+')':'Sem DX por F2'}</b></td></tr>
+   <tr><td>🌩️ E esporádica (Es)</td><td>${es}% de chance agora${f>=20?' · saltos de 700–2.200 km':' (afeta mais as frequências acima de 20 MHz)'}</td></tr>
+   <tr><td>⛈️ QRN local</td><td>${qrn>=20?'Alto (trovoada)':qrn>=10?'Moderado':qrn?'Leve':'Baixo'}</td></tr></table>
+   <h4>🧠 Análise</h4><ul>${nt.map(x=>'<li>'+x+'</li>').join('')}</ul>
+   <small>⚠️ É uma estimativa baseada em modelo simplificado, ionossondas e índices solares. Use como guia, não como garantia.</small>`;
+
+  const BN=[['160 m',1.85],['80 m',3.6],['40 m',7.1],['30 m',10.12],['20 m',14.2],['17 m',18.1],['15 m',21.2],['12 m',24.9],['PX 11 m',27.2],['10 m',28.5]];
+  $('ioBandas').innerHTML='<h4>📻 Situação das bandas agora</h4><table>'+BN.map(([n,bf])=>{const x=an(bf,d),[l,c]=ioLbl(x.s);
+    return`<tr><td><b>${n}</b> <small>${bf} MHz</small></td><td><span style="color:${c}">●</span> ${l} ${x.s?`· silêncio até ${x.sk?km(x.sk):'0 km'}`:bf>=20&&es>=25?'· Es possível':''}</td></tr>`}).join('')+'</table>';
+  $('ioPrev').innerHTML=`<h4>📈 Próximas 24h · ${f} MHz</h4>`+prev.map(x=>{const[l,c]=ioLbl(x.s);
+    return`<div class="bar"><div style="width:${Math.max(14,x.s)}%;background:${c}">${x.t.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})} · ${x.s} ${l} · MUF ${x.mm.toFixed(1)}${f>=20&&x.es>=25?' · Es '+x.es+'%':''}</div></div>`}).join('');
+  ioDesenha(p,gw,A,hop,alc,sts);}
+
+function ioDesenha(p,gw,A,hop,alc,sts){if(typeof L==='undefined')return;$('ioMapa').style.display='block';
+  if(!ioMap){ioMap=L.map('ioMapa',{worldCopyJump:true});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(ioMap);ioLay=L.layerGroup().addTo(ioMap);}
+  ioLay.clearLayers();const c=(r,o,t)=>r>0&&L.circle(p,{radius:Math.min(r,15000)*1000,...o}).addTo(ioLay).bindTooltip(t);
+  if(A.s){c(alc,{color:'#ef4444',weight:2,fillOpacity:.04},'🌍 Alcance DX estimado: '+km(alc));
+    c(hop,{color:'#f97316',weight:2,fillOpacity:.06},'↗️ Limite de 1 salto: '+km(hop));
+    if(A.sk)c(A.sk,{color:'#64748b',weight:2,dashArray:'6 4',fillColor:'#000',fillOpacity:.25},'🔇 Zona de silêncio até '+km(A.sk));}
+  c(gw,{color:'#22c55e',weight:2,fillOpacity:.3},'📶 Onda terrestre: '+km(gw));
+  L.circleMarker(p,{radius:7,color:'#000',fillColor:'#22c55e',fillOpacity:1}).addTo(ioLay).bindTooltip('📍 Você');
+  sts.forEach(s=>L.circleMarker([s.la,s.lo],{radius:6,color:'#000',fillColor:'#3b82f6',fillOpacity:1}).addTo(ioLay).bindTooltip(`📡 ${esc(s.nome)} · foF2 ${s.fo}`));
+  setTimeout(()=>{ioMap.invalidateSize();ioMap.fitBounds(L.latLng(p).toBounds(Math.min(Math.max(alc,gw*3,500),8000)*2000));},150);}
+
 /* CLIMA AUTOMÁTICO */
 $('local').onchange=()=>{const r=regs.find(x=>x.local===$('local').value&&x.coord);if(r){$('coord').value=r.coord;dxCalc();}};
-async function climaAuto(){const p=latlon($('coord').value)||[-30.03,-51.23];$('cStat').textContent='Buscando...';
+async function climaAuto(){const p=latlon($('coord').value)||[-29.17,-51.18];$('cStat').textContent='Buscando...';
   try{const c=(await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p[0]}&longitude=${p[1]}&current=temperature_2m,relative_humidity_2m,surface_pressure,cloud_cover,precipitation,weather_code,wind_speed_10m,visibility`)).json()).current;
     const f=(v,l,n)=>n[l.filter(x=>v>=x).length],wc=c.weather_code;
     setVal($('ceu'),f(c.cloud_cover,[10,30,70,90],cadDef.ceu));
@@ -611,6 +753,15 @@ const INFO=[
  ['📶 Escala RST (sinal)',[
   ['R 1–5','Legibilidade: 1 ilegível · 3 legível com dificuldade · 5 perfeita'],
   ['S 1–9','Força: 1 muito fraco · 5 razoável · 9 muito forte'],['T 1–9','Tom (só em CW/telegrafia): 9 = tom puro']]],
+ ['🌍 Propagação ionosférica',[
+  ['foF2','Frequência crítica da camada F2: acima dela, o sinal vertical atravessa a ionosfera'],
+  ['MUF','Máxima frequência utilizável: acima dela, o sinal não volta à Terra'],
+  ['LUF','Menor frequência utilizável: abaixo dela, a camada D absorve o sinal'],
+  ['FOT','Frequência ótima de trabalho ≈ 85% da MUF'],['SFI','Fluxo solar 10,7 cm: quanto maior, mais as bandas altas abrem'],
+  ['Kp','Atividade geomagnética 0–9: acima de 4 a propagação piora'],
+  ['Zona de silêncio','Região entre o fim da onda terrestre e o primeiro retorno do salto'],
+  ['Es','E esporádica: nuvens ionizadas que abrem PX/10 m/6 m, comuns no verão'],
+  ['NVIS','Onda quase vertical: cobre 0–400 km sem zona de silêncio (80/40 m)']]],
  ['🚨 Emergência',[
   ['MAYDAY','Perigo grave e iminente à vida (dito 3x). Tem prioridade absoluta'],['PAN PAN','Urgência sem risco imediato à vida'],
   ['SÉCURITÉ','Aviso de segurança (meteorologia, navegação)'],['SOS','Socorro (Morse ···−−−···)'],
@@ -630,7 +781,7 @@ function renderInfo(){const q=$('buscaInfo').value.toLowerCase();
   $('infoC').innerHTML=INFO.map(([t,l])=>{const f=l.filter(([a,b])=>(a+' '+b+' '+t).toLowerCase().includes(q));
     return f.length?`<div class="card"><h3>${t}</h3><table>${f.map(([a,b])=>`<tr><td><b>${a}</b></td><td>${b}</td></tr>`).join('')}</table></div>`:''}).join('')||'<p class="muted">Nada encontrado.</p>';}
 
-/* ===== PERFIL E SENHA LOCAIS ===== */
+/* PERFIL E SENHA LOCAIS */
 let perfil=JSON.parse(localStorage.getItem(PKEY)||'null');
 const aMsg=t=>$('aMsg').textContent=t;
 async function hash(s,salt){const d=new TextEncoder().encode(salt+':'+s);
@@ -640,7 +791,7 @@ const TERMOS=`<div class="termos"><b>Termos de uso e privacidade</b><br>
 • Todos os dados ficam <b>somente neste aparelho</b>. Não existe servidor nem conta online.<br>
 • Você é responsável pelos seus backups. Limpar os dados do navegador ou trocar de aparelho apaga tudo.<br>
 • A senha só protege o acesso pela tela do app. Ela não pode ser recuperada, e esquecer a senha apaga os dados.<br>
-• As buscas enviam somente coordenadas, cidades e indicativos para Open-Meteo, OpenStreetMap, HamDB e Callook.<br>
+• As buscas enviam somente coordenadas, cidades e indicativos para Open-Meteo, OpenStreetMap, HamDB, Callook, NOAA e KC2G.<br>
 • Ouvir é permitido, mas não divulgue o conteúdo de comunicações privadas ou de serviços públicos (Lei 9.472/97).<br>
 • O app é fornecido "como está", sem garantias.</div>`;
 function telaAuth(){aMsg('');
